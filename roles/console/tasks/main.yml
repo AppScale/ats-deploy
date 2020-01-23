@@ -80,3 +80,6 @@
   failed_when:
     - shell_result.rc != 0
     - '"EntityAlreadyExists" not in shell_result.stderr'
+
+- import_tasks: certbot.yml
+  when: eucaconsole_certbot_configure

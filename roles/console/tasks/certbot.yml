@@ -1,0 +1,54 @@
+---
+# Provision and renew letsencrypt https certificate using certbot
+
+- name: install certbot package
+  yum:
+    name: certbot
+    state: present
+  tags:
+    - packages
+
+- name: certbot-renew service.d directory
+  file:
+    path: /etc/systemd/system/certbot-renew.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: eucaconsole certbot-renew configuration drop-in
+  copy:
+    src: certbot-renew-eucaconsole.conf
+    dest: /etc/systemd/system/certbot-renew.service.d/certbot-renew-eucaconsole.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: eucaconsole certbot https
+  shell: |
+    set -eu
+    CONSOLE_DOMAIN={{ eucaconsole_domain | quote }}
+    REGISTRATION_EMAIL={{ eucaconsole_certbot_email | quote }}
+    EXTRA_OPTS={{ eucaconsole_certbot_certonly_opts | quote }}
+    if [ -z "${REGISTRATION_EMAIL}" ] ; then
+      EXTRA_OPTS="${EXTRA_OPTS} --register-unsafely-without-email"
+    else
+      EXTRA_OPTS="${EXTRA_OPTS} --email ${REGISTRATION_EMAIL}"
+    fi
+    certbot certonly \
+      --non-interactive \
+      --agree-tos \
+      --cert-name eucaconsole \
+      --domain "${CONSOLE_DOMAIN}" \
+      --webroot \
+      --webroot-path /var/lib/eucaconsole/well-known-root/ \
+      ${EXTRA_OPTS}
+    ln -s -f -T /etc/letsencrypt/live/eucaconsole/fullchain.pem /etc/pki/tls/certs/eucaconsole.crt
+    ln -s -f -T /etc/letsencrypt/live/eucaconsole/privkey.pem /etc/pki/tls/private/eucaconsole.key
+    eucaconsole-reload-https
+
+- name: eucaconsole certbot https renewal
+  systemd:
+    enabled: true
+    state: started
+    name: certbot-renew.timer
