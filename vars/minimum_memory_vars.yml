@@ -1,0 +1,12 @@
+---
+# Variables for deploying components with the minimum required memory
+
+# Eucalyptus
+cloud_opts_mem: "-Xmx1g"
+
+# Midonet
+midonet_cassandra_heap: 1g
+midonet_cassandra_heapnew: 400m
+midonet_zookeeper_heap: 512m
+midonet_cluster_heap: 512m
+midonet_midolman_heap: 512m
