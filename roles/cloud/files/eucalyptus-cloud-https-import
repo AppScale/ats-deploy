@@ -1,0 +1,66 @@
+#!/bin/sh
+# Import HTTPS key/certificate from PEM files
+set -eo pipefail
+
+KEY_ALIAS="eucaconsole"
+PEM_KEY="/etc/pki/tls/private/eucaconsole.key"
+PEM_CERTS="/etc/pki/tls/certs/eucaconsole.crt"
+
+while (( "$#" )); do
+  IMPORT_ARG="$1"
+  case "${IMPORT_ARG}" in
+    --alias)
+      shift
+      KEY_ALIAS="$1"
+      ;;
+    --key)
+      shift
+      PEM_KEY="$1"
+      ;;
+    --certs)
+      shift
+      PEM_CERTS="$1"
+      ;;
+    *)
+      echo -e "Usage:\n\n\teucalyptus-cloud-https-import [--alias ALIAS] [--key FILE] [--certs FILE]\n"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+if [ ! -f "${PEM_KEY}" ] ; then
+  echo "Not found: ${PEM_KEY}"
+  exit 1
+fi
+if [ ! -f "${PEM_CERTS}" ] ; then
+  echo "Not found: ${PEM_CERTS}"
+  exit 1
+fi
+
+PEM_KEY_VALUE="$(<$PEM_KEY)"
+PEM_CERTS_VALUE="$(<$PEM_CERTS)"
+
+cat << SCRIPT |
+import com.eucalyptus.component.auth.SystemCredentials
+import com.eucalyptus.crypto.util.PEMFiles
+import java.security.cert.X509Certificate
+import java.security.KeyPair
+import java.nio.charset.StandardCharsets
+
+// wildcards hostname
+String keypairPem          = """$PEM_KEY_VALUE"""
+String certificateChainPem = """$PEM_CERTS_VALUE"""
+String keyAlias            = """$KEY_ALIAS"""
+
+// handle pem
+KeyPair keyPair = PEMFiles.getKeyPair( keypairPem.getBytes( StandardCharsets.UTF_8 ) )
+X509Certificate[] certificates = PEMFiles.getCertChain( certificateChainPem.getBytes( StandardCharsets.UTF_8 ) )
+
+// import key and certificate chain
+SystemCredentials.keyStore.addKeyPair( keyAlias, certificates, keyPair.getPrivate( ), '' )
+
+// result
+"To use imported certificate, run:\n\n\teuctl bootstrap.webservices.ssl.server_alias=\${keyAlias}\n"
+SCRIPT
+euctl euca=@/dev/stdin

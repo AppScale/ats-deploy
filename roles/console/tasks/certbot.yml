@@ -24,10 +24,15 @@
     group: root
     mode: 0644
 
+- name: certbot configuration to issue for service endpoints
+  set_fact:
+    eucaconsole_certbot_domain: "{{ eucaconsole_certbot_domain }},{{ eucaconsole_certbot_services | map('regex_replace', '^(.*)$', '\\1.' + cloud_system_dns_dnsdomain) | list | unique | sort | join(',') }}"
+  when: eucaconsole_certbot_request_service_domains and cloud_system_dns_dnsdomain
+
 - name: eucaconsole certbot https
   shell: |
     set -eu
-    CONSOLE_DOMAIN={{ eucaconsole_domain | quote }}
+    CONSOLE_DOMAIN={{ eucaconsole_certbot_domain | quote }}
     REGISTRATION_EMAIL={{ eucaconsole_certbot_email | quote }}
     EXTRA_OPTS={{ eucaconsole_certbot_certonly_opts | quote }}
     if [ -z "${REGISTRATION_EMAIL}" ] ; then
@@ -46,9 +51,18 @@
     ln -s -f -T /etc/letsencrypt/live/eucaconsole/fullchain.pem /etc/pki/tls/certs/eucaconsole.crt
     ln -s -f -T /etc/letsencrypt/live/eucaconsole/privkey.pem /etc/pki/tls/private/eucaconsole.key
     eucaconsole-reload-https
+    eucalyptus-cloud-https-import
 
 - name: eucaconsole certbot https renewal
   systemd:
     enabled: true
     state: started
     name: certbot-renew.timer
+
+- name: configure cloud property for services https
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euctl euctl bootstrap.webservices.ssl.server_alias=eucaconsole
+  delegate_to: "{{ groups.cloud[0] }}"
+  when: eucaconsole_certbot_request_service_domains and cloud_system_dns_dnsdomain

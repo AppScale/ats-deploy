@@ -224,6 +224,14 @@
     - shell_result.rc != 0
     - '"is already registered." not in shell_result.stderr'
 
+- name: eucalyptus cloud services https import utility
+  copy:
+    src: eucalyptus-cloud-https-import
+    dest: /usr/local/bin/eucalyptus-cloud-https-import
+    owner: root
+    group: root
+    mode: 0755
+
 - name: tools configuration directory
   file:
     path: /root/.euca

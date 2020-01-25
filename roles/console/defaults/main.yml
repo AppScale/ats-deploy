@@ -3,10 +3,12 @@
 eucaconsole_product: "{{ eucalyptus_product }}"
 eucaconsole_ats_product_url: https://www.appscale.com/product/
 eucaconsole_firewalld_configure: yes
-eucaconsole_domain: "console.{{ cloud_system_dns_dnsdomain | default('localhost') }}"
 eucaconsole_admin_password: ""
 
 # Certbot
 eucaconsole_certbot_configure: no
+eucaconsole_certbot_domain: "console.{{ cloud_system_dns_dnsdomain | default('localhost') }}"
 eucaconsole_certbot_email: ""
 eucaconsole_certbot_certonly_opts: "--no-eff-email"
+eucaconsole_certbot_request_service_domains: yes
+eucaconsole_certbot_services: [autoscaling, bootstrap, cloudformation, ec2, elasticloadbalancing, iam, monitoring, properties, s3, sqs, sts, swf]
