@@ -9,6 +9,7 @@
     - awscli
     - bash-completion
     - bzip2
+    - eucalyptus-awscli-plugin
     - qemu-img
     - wget
     - xz
@@ -257,31 +258,30 @@
   args:
     creates: /root/.euca/euca-admin.ini
 
-- name: eucalyptus awscli credentials/endpoints wrapper
-  copy:
-    src: eucalyptus-awscli.sh
-    dest: /usr/local/bin/eucalyptus-awscli.sh
+- name: aws cli configuration directory
+  file:
+    path: /root/.aws
+    state: directory
     owner: root
     group: root
     mode: 0755
 
-- name: bash environment for client tools
-  blockinfile:
-    path: /root/.bash_profile
-    marker: '# {mark} eucalyptus client tools configuration'
-    insertafter: '^export PATH'
-    block: |
-      AWS_DEFAULT_OUTPUT=text
-      AWS_DEFAULT_REGION=eucalyptus
-      export AWS_DEFAULT_OUTPUT AWS_DEFAULT_REGION
+- name: aws cli configuration
+  template:
+    src: aws-config.j2
+    dest: /root/.aws/config
+    owner: root
+    group: root
+    mode: 0644
 
-- name: bash aliases for client tools
-  blockinfile:
-    path: /root/.bashrc
-    marker: '# {mark} eucalyptus client tools configuration'
-    insertbefore: '^# Source global definitions'
-    block: |
-      alias aws='/usr/local/bin/eucalyptus-awscli.sh'
+- name: generate aws cli credentials
+  shell: |
+    set -eu
+    eval $(euca-generate-environment-config)
+    echo -e "[default]\naws_access_key_id = ${AWS_ACCESS_KEY_ID}\naws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}" > /root/.aws/credentials
+    chmod 600 /root/.aws/credentials
+  args:
+    creates: /root/.aws/credentials
 
 - name: eucalyptus-images image install wrapper
   copy:
