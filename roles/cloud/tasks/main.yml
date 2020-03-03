@@ -223,6 +223,8 @@
   failed_when:
     - shell_result.rc != 0
     - '"is already registered." not in shell_result.stderr'
+  until: shell_result is succeeded
+  retries: 5
 
 - name: eucalyptus cloud services https import utility
   copy:
