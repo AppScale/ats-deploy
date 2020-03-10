@@ -5,6 +5,7 @@
     state: permissive
   tags:
     - image
+    - selinux
 
 - name: install eucalyptus package
   yum:

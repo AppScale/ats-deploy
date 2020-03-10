@@ -110,6 +110,7 @@
     state: yes
   tags:
     - image
+    - selinux
   when: net_mode == "VPCMIDO"
 
 - name: eucalyptus network yaml
