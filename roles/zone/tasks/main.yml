@@ -22,7 +22,7 @@
     persistent: yes
   tags:
     - image
-    - packages
+    - selinux
 
 - name: eucalyptus ceph configuration
   copy:
