@@ -26,7 +26,7 @@ cloud_opts_custom: ""
 cloud_opts_mem: "-Xmx2g"
 cloud_opts_bindaddr: "--bind-addr={{ eucalyptus_host_cluster_ipv4 }}"
 cloud_opts_bootstrap_hosts: ""
-cloud_opts_tech_preview: "-Denable.sqs.tech.preview=true"
+cloud_opts_tech_preview: "-Denable.route53.tech.preview=true -Denable.sqs.tech.preview=true"
 cloud_log_level: INFO
 cloud_boostrap_hosts: no
 cloud_instances:
