@@ -7,6 +7,12 @@ ceph_cluster_network: "{{ ceph_public_network }}"
 
 ceph_osd_data_path: /var/lib/ceph-osd/osd0
 
+ceph_osd_volume_pool: eucavolumes
+
+ceph_osd_snapshot_pool: eucasnapshots
+
+ceph_rgw_uid: eucas3
+
 ceph_facts: "{{ True if ('ceph' in groups and groups['ceph']) else False }}"
 
 cloud_firewalld_configure: no

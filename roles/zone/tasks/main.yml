@@ -75,9 +75,11 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
+    CEPH_SNAPSHOT_POOL={{ ceph_osd_snapshot_pool | quote }}
+    CEPH_VOLUME_POOL={{ ceph_osd_volume_pool | quote }}
     ZONE_NAME={{ eucalyptus_zone_name | quote }}
-    euctl ${ZONE_NAME}.storage.cephsnapshotpools=eucasnapshots
-    euctl ${ZONE_NAME}.storage.cephvolumepools=eucavolumes
+    euctl ${ZONE_NAME}.storage.cephsnapshotpools=${CEPH_SNAPSHOT_POOL}
+    euctl ${ZONE_NAME}.storage.cephvolumepools=${CEPH_VOLUME_POOL}
     euctl ${ZONE_NAME}.storage.blockstoragemanager=ceph-rbd
   delegate_to: "{{ groups.cloud[0] }}"
   when: eucalyptus_ceph_conf is defined
