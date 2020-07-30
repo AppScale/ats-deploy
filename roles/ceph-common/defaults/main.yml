@@ -7,7 +7,19 @@ ceph_cluster_network: "{{ ceph_public_network }}"
 
 ceph_osd_data_path: /var/lib/ceph-osd/osd0
 
-ceph_facts: "{{ True if ('ceph' in groups and groups['ceph']) else False }}"
+ceph_osd_volume_pool: eucavolumes
+
+ceph_osd_snapshot_pool: eucasnapshots
+
+ceph_rgw_uid: eucas3
+
+ceph_facts: "{{ True if (ceph_facts_local or ('ceph' in groups and groups['ceph'])) else False }}"
+
+ceph_facts_local: no
+
+ceph_facts_delegate: "{{ 'localhost' if ceph_facts_local else None }}"
+
+ceph_facts_path: /root/eucalyptus/ceph
 
 cloud_firewalld_configure: no
 
