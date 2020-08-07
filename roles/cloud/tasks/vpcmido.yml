@@ -46,7 +46,7 @@
 
 - name: eucalyptus midonet gateway proxy arp runtime
   command:
-    cmd: sysctl -w net.ipv4.conf.{{ cloud_firewalld_public_interface }}.proxy_arp=1
+    cmd: sysctl -w net/ipv4/conf/{{ cloud_firewalld_public_interface }}/proxy_arp=1
   when: vpcmido_gw_srv_veth_create
 
 - name: eucalyptus midonet gateway forwarding / proxy arp persistent
@@ -55,8 +55,8 @@
     mode: 0644
     content: |
       # Enable forwarding and proxy arp for eucalyptus midonet gateway
-      net.ipv4.conf.{{ cloud_firewalld_public_interface }}.forwarding=1
-      net.ipv4.conf.{{ cloud_firewalld_public_interface }}.proxy_arp=1
+      net/ipv4/conf/{{ cloud_firewalld_public_interface }}/forwarding=1
+      net/ipv4/conf/{{ cloud_firewalld_public_interface }}/proxy_arp=1
   when: vpcmido_gw_srv_veth_create
 
 - name: midonet defaults configuration
