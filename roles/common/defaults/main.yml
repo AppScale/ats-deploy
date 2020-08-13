@@ -5,6 +5,8 @@ eucalyptus_yum_baseurl_snapshot: http://downloads.eucalyptus.cloud/software/euca
 eucalyptus_yum_baseurl: "{{ eucalyptus_yum_baseurl_snapshot }}"
 euca2ools_yum_baseurl: http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/
 eucalyptus_yum_gpgcheck: "1"
+eucalyptus_base_yum_enabled: no
+eucalyptus_base_yum_baseurl: https://downloads.eucalyptus.cloud/software/eucalyptus/base/5/rhel/7/x86_64/
 
 # Product settings
 eucalyptus_product: eucalyptus

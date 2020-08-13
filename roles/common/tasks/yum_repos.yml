@@ -25,6 +25,15 @@
     state: present
     key: /etc/pki/rpm-gpg/RPM-GPG-KEY-eucalyptus-release-as
 
+- name: eucalyptus base yum repository
+  template:
+    src: eucalyptus-base.repo.j2
+    dest: /etc/yum.repos.d/eucalyptus-base.repo
+    owner: root
+    group: root
+    mode: 0644
+  when: eucalyptus_base_yum_enabled|default(False)
+
 - name: eucalyptus yum repository
   template:
     src: eucalyptus.repo.j2

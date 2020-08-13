@@ -21,19 +21,31 @@
       tasks_from: host_facts
 
 - hosts: midonet_nsdb
+  module_defaults:
+    yum:
+      disablerepo: "{{ eucalyptus_yum_disablerepo | default(omit) }}"
   roles:
   - midonet-nsdb
 
 - hosts: cloud
+  module_defaults:
+    yum:
+      disablerepo: "{{ eucalyptus_yum_disablerepo | default(omit) }}"
   roles:
   - cloud
   - console
 
 - hosts: zone
+  module_defaults:
+    yum:
+      disablerepo: "{{ eucalyptus_yum_disablerepo | default(omit) }}"
   roles:
   - zone
 
 - hosts: node
+  module_defaults:
+    yum:
+      disablerepo: "{{ eucalyptus_yum_disablerepo | default(omit) }}"
   roles:
   - node
 
