@@ -2,6 +2,9 @@
 - import_tasks: vpcmido.yml
   when: net_mode == "VPCMIDO"
 
+- import_tasks: edge.yml
+  when: net_mode == "EDGE"
+
 - name: install eucalyptus-node package
   yum:
     name: eucalyptus-node

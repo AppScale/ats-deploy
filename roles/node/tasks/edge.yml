@@ -1,0 +1,18 @@
+---
+- name: create edge mode private network bridge service
+  template:
+    src: eucalyptus-edge-brnet.service.j2
+    dest: "/etc/systemd/system/eucalyptus-edge-brnet.service"
+    force: no
+    owner: root
+    group: root
+    mode: 0644
+  when: edge_bridge_create
+
+- name: start edge mode private network bridge service
+  systemd:
+    enabled: true
+    state: started
+    name: eucalyptus-edge-brnet
+  when: edge_bridge_create
+

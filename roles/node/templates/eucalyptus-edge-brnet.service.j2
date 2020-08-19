@@ -1,0 +1,15 @@
+[Unit]
+Description=Eucalyptus Edge Bridge Network
+After=network.target
+Before=eucanetd.service eucalyptus-nc.service
+
+[Service]
+Type=oneshot
+ExecStartPre=-/usr/sbin/ip link add name {{ net_bridge_interface }} type bridge
+ExecStartPre=-/usr/sbin/ip link set dev {{ net_bridge_interface }} up
+ExecStartPre=-/usr/sbin/ip addr add {{ edge_bridge_create_ip }}/{{ edge_bridge_create_prefix }} dev {{ net_bridge_interface }}
+ExecStart=/usr/bin/true
+
+[Install]
+WantedBy=multi-user.target
+

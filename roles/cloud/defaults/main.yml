@@ -5,10 +5,10 @@ cloud_listener_cidr: 0.0.0.0/0
 cloud_properties: {}
 
 # EDGE network settings
-edge_subnet: "{{ ansible_default_ipv4.network }}"
-edge_netmask: "{{ ansible_default_ipv4.netmask }}"
-edge_gateway: "{{ ansible_default_ipv4.gateway }}"
-edge_private_ip_range: 192.168.254.150-192.168.254.199
+edge_subnet: "{{ '172.31.0.0' if edge_bridge_create else ansible_default_ipv4.network }}"
+edge_netmask: "{{ '255.255.0.0' if edge_bridge_create else ansible_default_ipv4.netmask }}"
+edge_gateway: "{{ '172.31.0.1' if edge_bridge_create else ansible_default_ipv4.gateway }}"
+edge_private_ip_range: "{{ '172.31.0.2-172.31.0.254' if edge_bridge_create else '192.168.254.150-192.168.254.199' }}"
 edge_public_ip_range: 192.168.254.200-192.168.254.249
 
 # Firewalld settings

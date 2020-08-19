@@ -51,16 +51,19 @@ cloud_instances_conf_custom: "{{ cloud_instances.conf.custom }}"
 # EDGE network settings
 edge_router_enabled: Y
 edge_router_ip: AUTO
+edge_bridge_create: no
 
 # Network settings
 net_mode: EDGE
 net_mode_lower: "{{ net_mode | lower }}"
 net_mode_:
   edge:
-    bridge_interface: "{{ edge_bridge_interface | default('br0') }}"
+    bridge_interface: "{{ 'euca-priv-br0' if edge_bridge_create else (edge_bridge_interface | default('br0')) }}"
+    private_interface: "{{ 'euca-priv-br0' if edge_bridge_create else (edge_bridge_interface | default('br0')) }}"
   vpcmido:
     bridge_interface: "{{ vpc_bridge_interface | default('br0') }}"
-net_private_interface: "{{ net_public_interface }}"
+    private_interface: "{{ net_public_interface }}"
+net_private_interface: "{{ net_mode_[net_mode_lower]['private_interface'] }}"
 net_public_interface: en1
 net_bridge_interface: "{{ net_mode_[net_mode_lower]['bridge_interface'] }}"
 net_node_listen_addr: "{{ eucalyptus_host_cluster_ipv4 }}"
