@@ -67,5 +67,8 @@ net_node_listen_addr: "{{ eucalyptus_host_cluster_ipv4 }}"
 net_node_router_enabled: "{{ edge_router_enabled }}"
 net_node_router_ip: "{{ edge_router_ip }}"
 
+# DNS Settings
+cloud_dns_authoritative_balancer: no
+
 # Role settings
 key_facts: no

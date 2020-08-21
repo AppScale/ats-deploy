@@ -64,6 +64,14 @@
   register: systemd_result
   failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
+- name: disable dnsdist@eucalyptus service
+  systemd:
+    enabled: false
+    state: stopped
+    name: dnsdist@eucalyptus
+  register: systemd_result
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
+
 - name: stop ceph target
   systemd:
     enabled: false
@@ -203,6 +211,11 @@
 - name: remove zookeeper state directory
   file:
     path: /var/lib/zookeeper
+    state: absent
+
+- name: remove dnsdist configuration
+  file:
+    path: /etc/dnsdist/dnsdist-eucalyptus.conf
     state: absent
 
 - name: remove ceph configuration directory
