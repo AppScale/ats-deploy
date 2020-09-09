@@ -61,12 +61,12 @@
     groups: midonet_nsdb
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
-  when: ceph_converged|default(False) and net_mode == 'VPCMIDO'
+  when: ceph_converged|default(False) and net_mode|default('EDGE') == 'VPCMIDO'
   with_items: "{{ groups.node }}"
 - name: cloud to midonet_nsdb group for default vpcmido deployments
   add_host:
     groups: midonet_nsdb
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
-  when: "'midonet_nsdb' not in groups and net_mode == 'VPCMIDO'"
+  when: "'midonet_nsdb' not in groups and net_mode|default('EDGE') == 'VPCMIDO'"
   with_items: "{{ groups.cloud }}"

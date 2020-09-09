@@ -5,3 +5,7 @@ net_mode: EDGE
 # Midonet settings
 midonet_midolman_heap: Null
 
+# EDGE settings
+edge_bridge_create_ip: 172.31.0.1
+edge_bridge_create_prefix: 16
+
