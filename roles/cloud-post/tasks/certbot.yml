@@ -1,0 +1,132 @@
+---
+# Provision and renew letsencrypt https certificate for services using certbot
+
+- name: install certbot packages
+  yum:
+    name:
+    - certbot
+    - python2-certbot-dns-route53
+    - python2-futures
+    state: present
+  tags:
+    - packages
+
+- name: certbot-renew service.d directory
+  file:
+    path: /etc/systemd/system/certbot-renew.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: certbot-renew eucalyptus-cloud environment
+  copy:
+    src: certbot-renew-eucalyptus-cloud.conf
+    dest: /etc/systemd/system/certbot-renew.service.d/eucalyptus-cloud.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: certbot route53 system domain for eucalyptus-cloud authentication
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euform-create-stack \
+      --template-file /var/lib/eucalyptus/templates/eucalyptus-dns-template.yaml \
+      eucalyptus-dns
+  register: shell_result
+  changed_when: '"AlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"AlreadyExists" not in shell_result.stderr'
+
+- name: certbot firstboot certificate for eucalyptus-cloud
+  shell: |
+    cat <<"EOF" |
+    import com.eucalyptus.component.auth.SystemCredentials
+    import com.eucalyptus.configurable.PropertyDirectory
+    import com.eucalyptus.crypto.Certs
+    import com.eucalyptus.crypto.util.PEMFiles
+    import edu.ucsb.eucalyptus.cloud.entities.SystemConfiguration
+    String alias = 'firstboot'
+    String domain = SystemConfiguration.systemConfiguration.dnsDomain
+    String wildhost = "*.${domain}"
+    LinkedHashSet<String> altNames = [wildhost, "*.s3.${domain}" as String]
+    def keyPair = Certs.generateKeyPair( )
+    def certificate = Certs.generateServiceCertificate( keyPair, wildhost, altNames )
+    SystemCredentials.keyStore.addKeyPair( alias, certificate, keyPair.getPrivate( ), '' )
+    PropertyDirectory.getPropertyEntry( 'bootstrap.webservices.ssl.server_alias' ).setValue( alias )
+    """\
+    ${alias}
+    ${new String( PEMFiles.getBytes( certificate ), java.nio.charset.StandardCharsets.UTF_8 )}
+    """
+    EOF
+    euctl euca=@/dev/stdin > /var/lib/eucalyptus/keys/firstboot.pem
+  args:
+    creates: /var/lib/eucalyptus/keys/firstboot.pem
+
+- name: wait for certbot firstboot certificate for eucalyptus-cloud
+  shell: |
+    set -eu
+    HEARTBEAT_URL="https://bootstrap.{{ cloud_system_dns_dnsdomain | quote }}:{{ cloud_public_port | default(8773) }}/services/Heartbeat"
+    wget \
+      --ca-certificate /var/lib/eucalyptus/keys/firstboot.pem \
+      --quiet \
+      --output-document - \
+      "${HEARTBEAT_URL}"
+  register: shell_result
+  changed_when: False
+  until: shell_result is succeeded
+  retries: 5
+
+- name: certbot-renew aws data path directory for eucalyptus-cloud
+  file:
+    path: /etc/eucalyptus/botocore
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: certbot-renew aws configuration for eucalyptus-cloud
+  template:
+    src: botocore-endpoints.json.j2
+    dest: /etc/eucalyptus/botocore/endpoints.json
+    owner: root
+    group: root
+    mode: 0644
+
+- name: eucalyptus services certbot https
+  shell: |
+    set -eu
+    SERVICE_DOMAINS="{{ eucalyptus_services_endpoints | map('regex_replace', '^(.*)$', '\1.' + cloud_system_dns_dnsdomain) | list | unique | sort | join(',') }}"
+    REGISTRATION_EMAIL={{ eucalyptus_services_certbot_email | quote }}
+    EXTRA_OPTS={{ eucalyptus_services_certbot_certonly_opts | quote }}
+    if [ -z "${REGISTRATION_EMAIL}" ] ; then
+      EXTRA_OPTS="${EXTRA_OPTS} --register-unsafely-without-email"
+    else
+      EXTRA_OPTS="${EXTRA_OPTS} --email ${REGISTRATION_EMAIL}"
+    fi
+    export AWS_DATA_PATH=/etc/eucalyptus/botocore/
+    export AWS_CA_BUNDLE=/var/lib/eucalyptus/keys/firstboot.pem
+    certbot certonly \
+      --non-interactive \
+      --agree-tos \
+      --cert-name eucalyptus-cloud \
+      --domain "${SERVICE_DOMAINS}" \
+      --dns-route53 \
+      --deploy-hook /usr/local/bin/eucalyptus-cloud-https-import \
+      ${EXTRA_OPTS}
+  args:
+    creates: /etc/letsencrypt/live/eucalyptus-cloud/fullchain.pem
+
+- name: eucalyptus services certbot https renewal
+  systemd:
+    enabled: true
+    state: started
+    name: certbot-renew.timer
+
+- name: configure cloud property for services https
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euctl bootstrap.webservices.ssl.server_alias=eucalyptus-cloud

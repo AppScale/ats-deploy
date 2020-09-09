@@ -2,7 +2,10 @@
 # Cloud settings
 cloud_region_region_name: "{{ cloud_region_name }}"
 cloud_listener_cidr: 0.0.0.0/0
+cloud_listener_port: "{{ cloud_public_port }}"
+cloud_public_port: 8773
 cloud_properties: {}
+cloud_admin_password: ""
 
 # EDGE network settings
 edge_subnet: "{{ '172.31.0.0' if edge_bridge_create else ansible_default_ipv4.network }}"

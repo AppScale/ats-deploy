@@ -1,0 +1,25 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  EC2 VPC elastic IP address for Eucalyptus Console
+
+Resources:
+
+  ElasticIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+      - Key: Name
+        Value: Management Console
+
+Outputs:
+
+  ElasticIp:
+    Description: The IP address for the console
+    Value: !Ref ElasticIp
+
+  ElasticIpAllocationId:
+    Description: The IP address allocation identifier for the console
+    Value: !GetAtt ElasticIp.AllocationId
+

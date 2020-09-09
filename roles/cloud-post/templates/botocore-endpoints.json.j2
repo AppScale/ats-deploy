@@ -1,0 +1,79 @@
+{
+  "partitions" : [ {
+    "defaults" : {
+      "hostname" : "{service}.{dnsSuffix}",
+      "protocols" : [ "https" ],
+      "signatureVersions" : [ "v4" ]
+    },
+    "dnsSuffix" : "{{ cloud_system_dns_dnsdomain | quote }}:{{ cloud_public_port | default(8773) }}",
+    "partition" : "aws",
+    "partitionName" : "AWS Standard",
+    "regionRegex" : "^(us|eu|ap|sa|ca|me|af)\\-\\w+\\-\\d+$",
+    "regions" : {
+      "eucalyptus" : {
+        "description" : "Eucalyptus Cloud"
+      }
+    },
+    "services" : {
+      "autoscaling" : {
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      },
+      "cloudformation" : {
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      },
+      "ec2" : {
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      },
+      "elasticloadbalancing" : {
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      },
+      "iam" : {
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      },
+      "monitoring" : {
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      },
+      "route53" : {
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      },
+      "s3" : {
+        "defaults" : {
+          "signatureVersions" : [ "s3v4" ]
+        },
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      },
+      "sqs" : {
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      },
+      "sts" : {
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      },
+      "swf" : {
+        "endpoints" : {
+          "eucalyptus" : { }
+        }
+      }
+    }
+  } ],
+  "version" : 3
+}

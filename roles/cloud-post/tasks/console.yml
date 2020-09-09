@@ -1,0 +1,125 @@
+---
+- name: install console image
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    /usr/local/bin/eucalyptus-system-images --type console --size 10
+  register: shell_result
+  changed_when: '"image already installed" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - shell_result.rc != 2
+
+- name: console account
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euare-accountcreate -a "{{ eucalyptus_console_account | quote }}"
+  register: shell_result
+  changed_when: '"EntityAlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"EntityAlreadyExists" not in shell_result.stderr'
+
+- name: console account image launch permission
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-assume-system-credentials)
+    CONSOLE_IMAGEID=$(euca-describe-images --filter tag:type=eucalyptus-console-image | head -n 1 | grep ^IMAGE | cut -f 2)
+    CONSOLE_ACCOUNT=$(euare-accountlist | grep "^{{ eucalyptus_console_account | quote }}[[:space:]]" | cut -f 2)
+    euca-modify-image-attribute -l -a "${CONSOLE_ACCOUNT}" "${CONSOLE_IMAGEID}"
+
+- name: console route53 system domain for eucalyptus-cloud authentication
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euform-create-stack \
+      --template-file /var/lib/eucalyptus/templates/eucalyptus-dns-template.yaml \
+      eucalyptus-dns
+  register: shell_result
+  changed_when: '"AlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"AlreadyExists" not in shell_result.stderr'
+
+- name: console elastic ip address stack
+  shell: |
+    set -eu
+    eval $(clcadmin-impersonate-user -a "{{ eucalyptus_console_account | quote }}")
+    euform-create-stack --template-file /var/lib/eucalyptus/templates/console-eip-template.yaml console-eip
+  register: shell_result
+  changed_when: '"AlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"AlreadyExists" not in shell_result.stderr'
+
+- name: wait for console elastic ip address stack
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-impersonate-user -a "{{ eucalyptus_console_account | quote }}")
+    euform-describe-stacks console-eip | grep CREATE_COMPLETE
+  register: shell_result
+  changed_when: False
+  until: shell_result is succeeded
+  retries: 5
+
+- name: console elastic ip address
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-impersonate-user -a "{{ eucalyptus_console_account | quote }}")
+    euform-describe-stack-resource -l ElasticIp console-eip | cut -f 3
+  register: shell_result
+  changed_when: False
+
+- name: update console route53 system domain for eucalyptus-cloud authentication
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euform-update-stack \
+      --template-file /var/lib/eucalyptus/templates/eucalyptus-dns-template.yaml \
+      -p ConsoleIpAddress={{ shell_result.stdout }} \
+      eucalyptus-dns
+  register: shell_result
+  changed_when: '"AlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"AlreadyExists" not in shell_result.stderr'
+
+- name: console image identifier lookup
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-assume-system-credentials)
+    euca-describe-images --filter tag:type=eucalyptus-console-image | head -n 1 | grep ^IMAGE | cut -f 2
+  register: shell_result
+  changed_when: False
+
+- name: console image identifier fact
+  set_fact:
+    eucalyptus_console_image_id: "{{ shell_result.stdout }}"
+
+- name: console manage stack command
+  copy:
+    src: console-manage-stack
+    dest: /usr/local/bin/console-manage-stack
+    owner: root
+    group: root
+    mode: 0755
+
+- name: console stack configuration
+  template:
+    src: console.conf.j2
+    dest: /etc/eucalyptus/console.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: console stack
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-assume-system-credentials)
+    /usr/local/bin/console-manage-stack -a create
+  register: shell_result
+  changed_when: '"AlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"AlreadyExists" not in shell_result.stderr'

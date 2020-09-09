@@ -1,0 +1,106 @@
+#!/bin/bash
+#
+# Manage the console stack:
+#
+#    console-manage-stack [-h] [-a {create,delete,check}]
+#
+# Create, delete or check the status for the management console stack.
+#
+set -euo pipefail
+
+# Process arguments
+CMS_ACTION="check"
+while (( "$#" )); do
+  CMS_ARG="$1"
+  case "${CMS_ARG}" in
+    -a|--action)
+      shift
+      CMS_ACTION="$1"
+      ;;
+    -d|--debug)
+      set -x
+      ;;
+    *)
+      echo -e "Usage:\n\n\tconsole-manage-stack [-h] [-a {create,delete,check}]\n"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+# Required configuration
+CONSOLE_IMAGEID=""
+
+# Source configuration
+if [ -f "/etc/eucalyptus/console.conf" ] ; then
+  . "/etc/eucalyptus/console.conf"
+fi
+
+if [ -z "${CONSOLE_IMAGEID}" ] ; then
+  echo "Console image configuration not found" >&2
+  exit 1
+fi
+
+# Detect configuration or use default
+CONSOLE_ACCOUNT="${CONSOLE_ACCOUNT:-console}"
+CONSOLE_BRANDING="${CONSOLE_BRANDING:-eucalyptus}"
+CONSOLE_CERTBOT="${CONSOLE_CERTBOT:-no}"
+CONSOLE_EIPALLOCID="${CONSOLE_EIPALLOCID:-}"
+CONSOLE_IMAGEID="${CONSOLE_IMAGEID:-}"
+CONSOLE_INSTANCETYPE="${CONSOLE_INSTANCETYPE:-t2.small}"
+CONSOLE_SSHCIDR="${CONSOLE_SSHCIDR:-127.0.0.1/32}"
+CONSOLE_SUBNETID="${CONSOLE_SUBNETID:-}"
+CONSOLE_UFSPORT="${CONSOLE_UFSPORT:-8773}"
+CONSOLE_VPCID="${CONSOLE_VPCID:-}"
+CONSOLE_WEBCIDR="${CONSOLE_WEBCIDR:-0.0.0.0/0}"
+
+# Verify running as console or can impersonate console account
+if [ "$(euare-accountlist | cut -f 1)" != "${CONSOLE_ACCOUNT}" ] ; then
+  eval $(clcadmin-impersonate-user -a "${CONSOLE_ACCOUNT}")
+fi
+
+if [ -z "${CONSOLE_VPCID}" ] ; then
+  CONSOLE_VPCID="$(euca-describe-account-attributes "default-vpc" | grep "VALUE" | cut -f 2)"
+  [ -n "${CONSOLE_VPCID}" ] || echo "Could not detect vpc configuration" >&2
+fi
+
+if [ -z "${CONSOLE_SUBNETID}" ] && [ -n "${CONSOLE_VPCID}" ]; then
+  CONSOLE_SUBNETID="$(euca-describe-subnets --filter "vpc-id=${CONSOLE_VPCID}" --filter "default-for-az=true" | head -n 1 | cut -f 2)"
+  [ -n "${CONSOLE_SUBNETID}" ] || echo "Could not detect subnet configuration" >&2
+fi
+
+if [ -z "${CONSOLE_EIPALLOCID}" ] ; then
+  CONSOLE_EIPALLOCID="$(euca-describe-tags --filter resource-type=elastic-ip --filter key=aws:cloudformation:stack-name --filter value=console-eip | cut -f 3)"
+  [ -n "${CONSOLE_EIPALLOCID}" ] || echo "Could not detect eip configuration, check console-eip stack exists." >&2
+fi
+
+if [ "${CMS_ACTION}" = "check" ] ; then
+  if ! euform-describe-stacks "console" | grep "^STACK" ; then
+    echo "STACK\tconsole\tNOT_FOUND"
+  fi
+elif  [ "${CMS_ACTION}" = "create" ] ; then
+  if [ -z "${CONSOLE_EIPALLOCID}" ] || [ -z "${CONSOLE_SUBNETID}" ] || [ -z "${CONSOLE_VPCID}" ] ; then
+    exit 1
+  fi
+
+  euform-create-stack \
+    --template-file "/var/lib/eucalyptus/templates/console-template.yaml" \
+    --capabilities "CAPABILITY_IAM" \
+    -p ElasticIpAllocationId="${CONSOLE_EIPALLOCID}" \
+    -p EnableCertbot="${CONSOLE_CERTBOT}" \
+    -p Branding="${CONSOLE_BRANDING}" \
+    -p UfsPort="${CONSOLE_UFSPORT}" \
+    -p InstanceType="${CONSOLE_INSTANCETYPE}" \
+    -p ImageId="${CONSOLE_IMAGEID}" \
+    -p SubnetId="${CONSOLE_SUBNETID}" \
+    -p VpcId="${CONSOLE_VPCID}" \
+    -p SshCidr="${CONSOLE_SSHCIDR}" \
+    -p ConsoleCidr="${CONSOLE_WEBCIDR}" \
+    "console"
+elif  [ "${CMS_ACTION}" = "delete" ] ; then
+  euform-delete-stack "console"
+else
+  echo "Invalid action: ${CMS_ACTION}" >&2
+  exit 3
+fi
+

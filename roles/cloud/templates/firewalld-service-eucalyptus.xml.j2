@@ -2,5 +2,5 @@
 <service>
   <short>Eucalyptus Cloud</short>
   <description>Public endpoints for Eucalyptus Cloud web services (see also dns, http and https)</description>
-  <port protocol="tcp" port="8773"/>
+  <port protocol="tcp" port="{{ cloud_public_port | default(8773) }}"/>
 </service>
