@@ -10,3 +10,39 @@
     esi-manage-stack --region localhost -a create imaging
   register: shell_result
   changed_when: '"is already created." not in shell_result.stdout'
+
+- name: configure dns listeners
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euctl --region localhost dns.dns_listener_address_match={{ cloud_dns_listener_address_match | default() | quote }}
+    euctl --region localhost dns.dns_listener_port={{ cloud_dns_listener_port | default(53) | quote }}
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
+  when: cloud_dns_listener_port is defined or cloud_dns_listener_address_match is defined
+
+- name: wait for dns listeners
+  wait_for:
+    sleep: 5
+    host: "{{ eucalyptus_host_public_ipv4 }}"
+    port: "{{ cloud_dns_listener_port | default(53) }}"
+    timeout: 20
+  ignore_errors: yes
+  when: cloud_dns_listener_port is defined or cloud_dns_listener_address_match is defined
+
+- name: configure dnsdist authoritative dns service
+  template:
+    src: dnsdist-eucalyptus.conf.j2
+    dest: /etc/dnsdist/dnsdist-eucalyptus.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: cloud_dns_authoritative_balancer|default(False)
+
+- name: start dnsdist authoritative dns service
+  systemd:
+    enabled: true
+    state: started
+    name: dnsdist@eucalyptus
+  when: cloud_dns_authoritative_balancer|default(False)

@@ -1,0 +1,57 @@
+--
+-- Eucalyptus authoritative DNS server configuration for dnsdist
+--
+
+EUCALYPTUS_DNSDOMAIN = "{{ cloud_system_dns_dnsdomain | quote }}"
+
+--
+-- Listener / access control configuration
+--
+{% for ip in (groups['cloud'] | map('extract', hostvars, ['eucalyptus_host_public_ipv4'])) %}
+newServer({address="{{ ip }}:{{ cloud_dns_listener_port|default(53) }}", checkName="ec2." .. EUCALYPTUS_DNSDOMAIN})
+{% endfor %}
+addLocal("{{ dnsdist_listener_address|default(eucalyptus_host_public_ipv4) }}:{{ dnsdist_listener_port|default(5353) }}", {reusePort=true})
+setACL({"0.0.0.0/0", "::/0"})
+
+--
+-- Static DNS responses
+--
+{% if dnsdist_console_ip|default() %}
+addAction("console." .. EUCALYPTUS_DNSDOMAIN, SpoofAction("{{ dnsdist_console_ip | quote }}"))
+{% elif dnsdist_console_cname|default() %}
+addAction("console." .. EUCALYPTUS_DNSDOMAIN, SpoofCNAMEAction("{{ dnsdist_console_cname | quote }}"))
+{% else %}
+-- addAction("console.{{ cloud_system_dns_dnsdomain }}", SpoofAction("10.20.30.40"))
+-- addAction("cname-console.{{ cloud_system_dns_dnsdomain }}", SpoofCNAMEAction("console.{{ cloud_system_dns_dnsdomain }}"))
+{% endif %}
+
+{% if dnsdist_cache_enabled|default(True) %}
+--
+-- Cache configuration
+--
+cache = newPacketCache(10000, 86400, 0, 60, 60)
+getPool(""):setCache(cache)
+setStaleCacheEntriesTTL({{ dnsdist_cache_entry_ttl | default(3600) }})
+setCacheCleaningDelay({{ dnsdist_cache_clean_delay | default(60) }})
+
+{% if dnsdist_cache_clean_maintenance_enabled|default(True) %}
+--
+-- Maintenance hook to stop cache cleaning when backends are not
+-- available. Cached results will be returned up to StaleCacheEntriesTTL.
+--
+function maintenance()
+  servers = getPoolServers("")
+  anyUp = false
+  for _, server in ipairs(servers) do
+    if server.upStatus then
+      anyUp = true
+    end
+  end
+  if anyUp then
+      setCacheCleaningPercentage(100)
+  else
+      setCacheCleaningPercentage(0)
+  end
+end
+{% endif %}
+{% endif %}
