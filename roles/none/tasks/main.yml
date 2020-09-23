@@ -143,6 +143,20 @@
       - python-rados
     state: absent
 
+- name: remove systemd units and drop-ins
+  file:
+    path: "/etc/systemd/system/{{ item }}"
+    state: absent
+  loop:
+  - "cassandra.service.d"
+  - "ceph-osd@.service.d"
+  - "certbot-renew.service.d"
+  - "eucalyptus-vpcmido-gwnet.service"
+  - "eucanetd.service.d"
+  - "midolman.service.d"
+  - "midonet-cluster.service.d"
+  - "zookeeper.service.d"
+
 - name: remove eucaconsole configuration directory
   file:
     path: /etc/eucaconsole
@@ -270,3 +284,6 @@
     path: /root/eucalyptus
     state: absent
 
+- name: systemd daemon reload
+  systemd:
+    daemon_reload: true
