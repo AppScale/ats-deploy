@@ -29,6 +29,17 @@
     - firewalld
   when: cloud_firewalld_cluster_interface is not none and cloud_firewalld_cluster_zone is not none
 
+- name: eucalyptus gre service
+  copy:
+    src: firewalld-service-euca-gre.xml
+    dest: /etc/firewalld/services/euca-gre.xml
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - firewalld
+  when: cloud_firewalld_cluster_cidr is not none
+
 - name: eucalyptus firewalld cluster zone
   template:
     src: firewalld-zone-euca-cluster.xml.j2
