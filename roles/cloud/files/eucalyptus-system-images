@@ -1,0 +1,92 @@
+#!/bin/sh
+# Eucalyptus system image management script
+set -euo pipefail
+
+IMAGE_SIZE="5"
+IMAGE_TYPE="console" # or service
+IMAGE_REPORT="no"
+
+while (( "$#" )); do
+  IMAGES_ARG="$1"
+  case "${IMAGES_ARG}" in
+    --report)
+      IMAGE_REPORT="yes"
+      ;;
+    --size)
+      shift
+      IMAGE_SIZE="$1"
+      ;;
+    --type)
+      shift
+      IMAGE_TYPE="$1"
+      ;;
+    *)
+      echo -e "Usage:\n\n\teucalyptus-system-images [--report] [--size SIZE] [--type (console|service)]\n"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+IMAGE_TMPDIR="/var/lib/eucalyptus/upgrade"
+IMAGE_TEMPLATE="image.XXXXXXXX"
+IMAGE_URL_PREFIX="https://downloads.eucalyptus.cloud/software/eucalyptus/images"
+IMAGE_FULL_TYPE="eucalyptus-${IMAGE_TYPE}-image"
+IMAGE_LATEST_URL="${IMAGE_URL_PREFIX}/latest-${IMAGE_FULL_TYPE}.txt"
+
+if [ "yes" = "${IMAGE_REPORT}" ] ; then
+  for IMAGE_TYPE in "console" "service" ; do
+    IMAGE_FULL_TYPE="eucalyptus-${IMAGE_TYPE}-image"
+    IMAGE_LATEST_URL="${IMAGE_URL_PREFIX}/latest-${IMAGE_FULL_TYPE}.txt"
+    IMAGE_URL=$(wget --quiet --output-document - ${IMAGE_LATEST_URL} | grep "${IMAGE_URL_PREFIX}")
+    IMAGE_NAME=$(basename "${IMAGE_URL}")
+    IMAGE_VERSION_DOT=$(echo "${IMAGE_NAME}" | sed 's/.raw.xz$//' | cut --delimiter "-" --output-delimiter "." --fields "4-10")
+    echo -e "TYPE\t${IMAGE_FULL_TYPE}\tVERSION\t${IMAGE_VERSION_DOT}"
+  done
+  exit 0
+fi
+
+IMAGE_WORK=$(mktemp --directory --tmpdir="${IMAGE_TMPDIR}" "${IMAGE_TEMPLATE}")
+function cleanup {
+  [ ! -d "${IMAGE_WORK}" ] || rm -rf "${IMAGE_WORK}"
+}
+trap cleanup EXIT
+IMAGE_URL=$(wget --quiet --output-document - ${IMAGE_LATEST_URL} | grep "${IMAGE_URL_PREFIX}")
+IMAGE_NAME=$(basename "${IMAGE_URL}")
+IMAGE_VERSION_DASH=$(echo "${IMAGE_NAME}" | sed 's/.raw.xz$//' | cut --delimiter "-" --fields "4-10")
+IMAGE_VERSION_DOT=$(echo "${IMAGE_NAME}" | sed 's/.raw.xz$//' | cut --delimiter "-" --output-delimiter "." --fields "4-10")
+
+# check
+IMAGE_ID=$(euca-describe-images --filter "tag:type=${IMAGE_FULL_TYPE}" --filter "tag:version=${IMAGE_VERSION_DOT}" | grep ^IMAGE | cut -f 2 || true)
+IMAGE_INSTALLED="no"
+if [ -n "${IMAGE_ID}" ] ; then
+  IMAGE_INSTALLED="yes"
+  echo "Latest image already installed ${IMAGE_FULL_TYPE} v${IMAGE_VERSION_DOT} as ${IMAGE_ID}" 1>&2
+  exit 2
+fi
+
+# download
+wget --quiet --output-document "${IMAGE_WORK}/${IMAGE_NAME}" "${IMAGE_URL}"
+unxz "${IMAGE_WORK}/${IMAGE_NAME}"
+truncate --size="${IMAGE_SIZE}GiB" --no-create "${IMAGE_WORK}/${IMAGE_NAME%%.xz}"
+
+# install
+IMAGE_ID=$(euca-install-image \
+  -r "x86_64" \
+  -i "${IMAGE_WORK}/${IMAGE_NAME%%.xz}" \
+  --virt "hvm" \
+  -b "${IMAGE_FULL_TYPE}-${IMAGE_VERSION_DASH}" \
+  -n "${IMAGE_FULL_TYPE}-${IMAGE_VERSION_DASH}" \
+| grep IMAGE | cut -f 2)
+
+IMAGE_EXTRA_TAGS=""
+if [ "service" = "${IMAGE_TYPE}" ] ; then
+  IMAGE_EXTRA_TAGS="${IMAGE_EXTRA_TAGS} --tag provides=imaging,loadbalancing"
+fi
+euca-create-tags \
+  ${IMAGE_EXTRA_TAGS} \
+  --tag "type=${IMAGE_FULL_TYPE}" \
+  --tag "version=${IMAGE_VERSION_DOT}" \
+  "${IMAGE_ID}" > "/dev/null"
+
+echo -e "IMAGE\t${IMAGE_ID}"

@@ -33,7 +33,6 @@
       disablerepo: "{{ eucalyptus_yum_disablerepo | default(omit) }}"
   roles:
   - cloud
-  - console
 
 - hosts: zone
   module_defaults:
@@ -48,6 +47,13 @@
       disablerepo: "{{ eucalyptus_yum_disablerepo | default(omit) }}"
   roles:
   - node
+
+- hosts: console
+  module_defaults:
+    yum:
+      disablerepo: "{{ eucalyptus_yum_disablerepo | default(omit) }}"
+  roles:
+  - console
 
 - hosts: cloud
   roles:

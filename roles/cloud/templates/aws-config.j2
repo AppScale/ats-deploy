@@ -3,7 +3,7 @@ eucalyptus = awscli_plugin_eucalyptus
 
 [default]
 ufshost = {{ cloud_system_dns_dnsdomain }}
-ufsport = 8773
+ufsport = {{ cloud_public_port | default(8773) }}
 verify_ssl = no
 output = text
 region = eucalyptus

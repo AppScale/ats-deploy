@@ -1,0 +1,261 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Eucalyptus Console VPC template for use with console image
+
+Parameters:
+
+  ElasticIpAllocationId:
+    Description: The allocation identifier for the console public IP
+    Type: String
+
+  EnableCertbot:
+    Description: Provision HTTPS certificate using certbot
+    Type: String
+    AllowedValues:
+    - "yes"
+    - "no"
+    Default: "no"
+
+  Branding:
+    Description: Console branding
+    Type: String
+    AllowedValues:
+    - ats
+    - eucalyptus
+    Default: eucalyptus
+
+  UfsPort:
+    Description: Port to use for cloud services
+    Type: String
+    Default: 8773
+
+  InstanceType:
+    Description: Instance type to use
+    Type: String
+    Default: t2.small
+
+  ImageId:
+    Description: Identifier for the eucaconsole image
+    Type: String
+
+  KeyName:
+    Description: EC2 keypair for instance SSH access
+    Type: String
+    Default: ''
+
+  SubnetId:
+    Description: The subnet to use
+    Type: String
+
+  VpcId:
+    Description: The vpc to use
+    Type: String
+
+  SshCidr:
+    Description: CIDR for permitted SSH source IP addresses
+    Type: String
+    Default: "127.0.0.1/32"
+
+  ConsoleCidr:
+    Description: CIDR for permitted http(s) source IP addresses
+    Type: String
+    Default: "0.0.0.0/0"
+
+Conditions:
+
+  UseKeyNameParameter: !Not
+    - !Equals
+      - !Ref KeyName
+      - ''
+
+Mappings:
+
+  Brandings:
+    eucalyptus:
+      ImageFavicon: favicon.ico
+      ImageLogo: console-logo.png
+      LocaleSuffix: ""
+      ProductUrl: https://github.com/Corymbia/eucalyptus/
+    ats:
+      ImageFavicon: ats-favicon.ico
+      ImageLogo: ats-console-logo.png
+      LocaleSuffix: "@ATS"
+      ProductUrl: https://www.appscale.com/product/
+
+Resources:
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Console security group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SshCidr
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref ConsoleCidr
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref ConsoleCidr
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action: sts:AssumeRole
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+      Policies:
+      - PolicyName: eucaconsole-ec2-addresses
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action: "ec2:*Address*"
+            Resource: "*"
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+      - !Ref Role
+
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      InstanceMonitoring: false
+      IamInstanceProfile: !Ref InstanceProfile
+      AssociatePublicIpAddress: true
+      SecurityGroups:
+      - !Ref SecurityGroup
+      KeyName: !If
+      - UseKeyNameParameter
+      - !Ref 'KeyName'
+      - !Ref 'AWS::NoValue'
+      UserData: !Base64
+        "Fn::Sub":
+        - |
+          #cloud-config
+          write_files:
+          - path: /etc/eucaconsole/nginx.conf.d/40-nginx-ats-static.conf
+            permissions: "0644"
+            owner: root
+            content: |
+              # nginx configuration fragment for ATS console assets
+              
+              location =/static/img/favicon.ico {
+                  alias                   /usr/lib/python2.7/site-packages/eucaconsole/static/img/${ImageFavicon};
+                  include                 /etc/nginx/mime.types;
+                  add_header              Cache-Control public;
+                  expires                 30d;
+                  access_log              off;
+              }
+              
+              location =/static/img/console-logo.png {
+                  alias                   /usr/lib/python2.7/site-packages/eucaconsole/static/img/${ImageLogo};
+                  include                 /etc/nginx/mime.types;
+                  add_header              Cache-Control public;
+                  expires                 30d;
+                  access_log              off;
+              }
+          - path: /etc/eucaconsole/console-cloud-config.ini
+            permissions: "0644"
+            owner: root
+            content: |
+              ##############################################
+              # Eucalyptus Management Console Cloud Config #
+              ##############################################
+              
+              [app:main]
+              use = egg:eucaconsole
+              
+              # Eucalyptus settings
+              ufshost = ${AWS::URLSuffix}
+              ufsport = ${UfsPort}
+              
+              # Branding settings
+              product.url = ${ProductUrl}
+              pyramid.default_locale_name = en${LocaleSuffix}
+              pyramid.locale_negotiator = eucaconsole.i18n.fixed_locale_negotiator
+              
+              # AWS settings
+              aws.enabled = false
+              aws.default.region = us-east-1
+          - path: /etc/eucaconsole/eucaconsole-domain.txt
+            permissions: "0644"
+            owner: root
+            content: "console.${AWS::URLSuffix}"
+          - path: /etc/eucaconsole/ec2-endpoint.txt
+            permissions: "0644"
+            owner: root
+            content: "http://ec2.${AWS::URLSuffix}:${UfsPort}/"
+          - path: /etc/eucaconsole/elastic-ip-allocation.txt
+            permissions: "0644"
+            owner: root
+            content: ${ElasticIpAllocationId}
+          - path: /etc/systemd/system/eucaconsole-certbot-init.service
+            permissions: "0644"
+            owner: root
+            content: |
+              [Unit]
+              Description=Eucalyptus Console Certbot Initialization
+              After=eucaconsole.service
+              Requires=eucaconsole.service
+              AssertPathExists=/etc/eucaconsole/eucaconsole-domain.txt
+              
+              [Service]
+              Type=simple
+              ExecStart=/bin/sh -c "[ -d /etc/letsencrypt/live/eucaconsole ] || { sleep 30; /usr/bin/eucaconsole-certbot-init $(</etc/eucaconsole/eucaconsole-domain.txt); }"
+              RemainAfterExit=true
+              Restart=on-failure
+              RestartSec=60
+              StartLimitInterval=24h
+              StartLimitBurst=2
+              TimeoutStartSec=300
+          runcmd:
+          - "[ ${EnableCertbot} != yes ] || systemctl enable --now eucaconsole-certbot-init.service"
+        - ImageFavicon: !FindInMap
+          - Brandings
+          - !Ref Branding
+          - ImageFavicon
+          ImageLogo: !FindInMap
+          - Brandings
+          - !Ref Branding
+          - ImageLogo
+          LocaleSuffix: !FindInMap
+          - Brandings
+          - !Ref Branding
+          - LocaleSuffix
+          ProductUrl: !FindInMap
+          - Brandings
+          - !Ref Branding
+          - ProductUrl
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+        VPCZoneIdentifier:
+        - !Ref SubnetId
+        LaunchConfigurationName: !Ref LaunchConfiguration
+        MinSize: 0
+        MaxSize: 1
+        DesiredCapacity: 1
+        Tags:
+        - Key: Name
+          Value: eucalyptus-console
+          PropagateAtLaunch: true
+

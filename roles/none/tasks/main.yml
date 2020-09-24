@@ -1,5 +1,13 @@
 ---
 # Remove eucalyptus packages and configuration (including dependencies)
+- name: disable eucaconsole service
+  systemd:
+    enabled: false
+    state: stopped
+    name: eucaconsole
+  register: systemd_result
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
+
 - name: disable eucalyptus-cloud service
   systemd:
     enabled: false
@@ -167,6 +175,17 @@
     path: /etc/eucalyptus
     state: absent
 
+- name: remove eucalyptus local bin scripts
+  file:
+    path: "/usr/local/bin/{{ item }}"
+    state: absent
+  loop:
+  - "console-manage-stack"
+  - "eucalyptus-cloud-https-import"
+  - "eucalyptus-images"
+  - "eucalyptus-system-images"
+  - "eucalyptus-vpcmidotz-up.sh"
+
 - name: remove eucalyptus libexec directory
   file:
     path: /usr/libexec/eucalyptus
@@ -277,6 +296,11 @@
 - name: remove tools configuration directory
   file:
     path: /root/.euca
+    state: absent
+
+- name: remove aws tools configuration directory
+  file:
+    path: /root/.aws
     state: absent
 
 - name: remove eucalyptus deployment configuration directory

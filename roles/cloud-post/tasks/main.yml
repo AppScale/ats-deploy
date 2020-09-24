@@ -2,6 +2,12 @@
 - import_tasks: vpcmido.yml
   when: net_mode == "VPCMIDO"
 
+- import_tasks: console.yml
+  when: eucalyptus_console_cloud_deploy and net_mode == "VPCMIDO"
+
+- import_tasks: certbot.yml
+  when: eucalyptus_services_certbot_enable
+
 - name: enable imaging service
   shell: |
     set -eu

@@ -71,8 +71,8 @@
   when: cloud_dns_authoritative_balancer
 
 - name: eucalyptus firewalld service
-  copy:
-    src: firewalld-service-eucalyptus.xml
+  template:
+    src: firewalld-service-eucalyptus.xml.j2
     dest: /etc/firewalld/services/eucalyptus.xml
     owner: root
     group: root
@@ -183,9 +183,11 @@
     eval $(clcadmin-assume-system-credentials)
     euctl system.dns.dnsdomain={{ cloud_system_dns_dnsdomain | quote }}
     euctl region.region_name={{ cloud_region_region_name | quote }}
+    euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
     euctl bootstrap.webservices.use_instance_dns=true
     euctl bootstrap.webservices.use_dns_delegation=true
-    euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
+    euctl bootstrap.webservices.port={{ cloud_listener_port | quote }}
+    euctl bootstrap.webservices.listener_address_match={{ cloud_listener_cidr | quote }}
   register: shell_result
   until: shell_result.rc == 0
   retries: 5
@@ -245,6 +247,38 @@
     group: root
     mode: 0755
 
+- name: cloudformation templates directory
+  file:
+    path: /var/lib/eucalyptus/templates
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: cloudformation template for eucalyptus dns
+  copy:
+    src: eucalyptus-dns-template.yaml
+    dest: /var/lib/eucalyptus/templates/eucalyptus-dns-template.yaml
+    owner: root
+    group: root
+    mode: 0644
+
+- name: cloudformation template for console elastic ip
+  copy:
+    src: console-eip-template.yaml
+    dest: /var/lib/eucalyptus/templates/console-eip-template.yaml
+    owner: root
+    group: root
+    mode: 0644
+
+- name: cloudformation template for console
+  copy:
+    src: console-template.yaml
+    dest: /var/lib/eucalyptus/templates/console-template.yaml
+    owner: root
+    group: root
+    mode: 0644
+
 - name: tools configuration directory
   file:
     path: /root/.euca
@@ -261,12 +295,24 @@
     group: root
     mode: 0644
 
+- name: admin password/login profile credential
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euare-useraddloginprofile -u admin -p "{{ cloud_admin_password | quote }}"
+  register: shell_result
+  when: cloud_admin_password|length >= 8
+  changed_when: '"EntityAlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"EntityAlreadyExists" not in shell_result.stderr'
+
 - name: generate admin credentials / configuration
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
     export AWS_DEFAULT_REGION=eucalyptus
-    euare-useraddkey --write-config --domain {{ cloud_system_dns_dnsdomain | quote }} --set-default-user admin > /root/.euca/euca-admin.ini
+    euare-useraddkey --write-config --domain "{{ cloud_system_dns_dnsdomain | quote }}:{{ cloud_public_port | default(8773) }}" --set-default-user admin > /root/.euca/euca-admin.ini
   args:
     creates: /root/.euca/euca-admin.ini
 
@@ -303,8 +349,10 @@
     group: root
     mode: 0755
 
-- name: configure cloud listener address match
-  shell: |
-    set -eu
-    eval $(clcadmin-assume-system-credentials)
-    euctl --region admin@localhost bootstrap.webservices.listener_address_match={{ cloud_listener_cidr | quote }}
+- name: eucalyptus-system-images system image install utility
+  copy:
+    src: eucalyptus-system-images
+    dest: /usr/local/bin/eucalyptus-system-images
+    owner: root
+    group: root
+    mode: 0755

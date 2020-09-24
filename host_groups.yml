@@ -25,6 +25,15 @@
   when: "'host_zone_key' not in hostvars[inventory_hostname] and inventory_hostname == item.1"
   with_indexed_items: "{{ groups.node|sort }}"
 
+# console
+- name: console group default
+  add_host:
+    groups: console
+    hostname: "{{ item }}"
+    inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  when: "'console' not in groups and not eucalyptus_console_cloud_deploy|default(False)"
+  with_items: "{{ groups.cloud }}"
+
 # ceph
 - name: node to ceph group for converged deployments
   add_host:

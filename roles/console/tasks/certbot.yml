@@ -8,22 +8,6 @@
   tags:
     - packages
 
-- name: certbot-renew service.d directory
-  file:
-    path: /etc/systemd/system/certbot-renew.service.d
-    state: directory
-    owner: root
-    group: root
-    mode: 0755
-
-- name: eucaconsole certbot-renew configuration drop-in
-  copy:
-    src: certbot-renew-eucaconsole.conf
-    dest: /etc/systemd/system/certbot-renew.service.d/certbot-renew-eucaconsole.conf
-    owner: root
-    group: root
-    mode: 0644
-
 - name: certbot configuration to issue for service endpoints
   set_fact:
     eucaconsole_certbot_domain: "{{ eucaconsole_certbot_domain }},{{ eucaconsole_certbot_services | map('regex_replace', '^(.*)$', '\\1.' + cloud_system_dns_dnsdomain) | list | unique | sort | join(',') }}"
@@ -32,14 +16,19 @@
 - name: eucaconsole certbot https
   shell: |
     set -eu
-    CONSOLE_DOMAIN={{ eucaconsole_certbot_domain | quote }}
-    REGISTRATION_EMAIL={{ eucaconsole_certbot_email | quote }}
-    EXTRA_OPTS={{ eucaconsole_certbot_certonly_opts | quote }}
+    CONSOLE_DOMAIN="{{ eucaconsole_certbot_domain | quote }}"
+    REGISTRATION_EMAIL="{{ eucaconsole_certbot_email | quote }}"
+    EXTRA_OPTS="{{ eucaconsole_certbot_certonly_opts | quote }}"
     if [ -z "${REGISTRATION_EMAIL}" ] ; then
       EXTRA_OPTS="${EXTRA_OPTS} --register-unsafely-without-email"
     else
       EXTRA_OPTS="${EXTRA_OPTS} --email ${REGISTRATION_EMAIL}"
     fi
+    if [ "{{ 'true' if eucaconsole_certbot_request_service_domains else 'false' }}" = "true" ] ; then
+      EXTRA_OPTS="${EXTRA_OPTS} --deploy-hook /usr/local/bin/eucalyptus-cloud-https-import"
+    fi
+    ln -s -f -T /etc/letsencrypt/live/eucaconsole/fullchain.pem /etc/pki/tls/certs/eucaconsole.crt
+    ln -s -f -T /etc/letsencrypt/live/eucaconsole/privkey.pem /etc/pki/tls/private/eucaconsole.key
     certbot certonly \
       --non-interactive \
       --agree-tos \
@@ -47,11 +36,10 @@
       --domain "${CONSOLE_DOMAIN}" \
       --webroot \
       --webroot-path /var/lib/eucaconsole/well-known-root/ \
+      --deploy-hook /usr/bin/eucaconsole-reload-https \
       ${EXTRA_OPTS}
-    ln -s -f -T /etc/letsencrypt/live/eucaconsole/fullchain.pem /etc/pki/tls/certs/eucaconsole.crt
-    ln -s -f -T /etc/letsencrypt/live/eucaconsole/privkey.pem /etc/pki/tls/private/eucaconsole.key
-    eucaconsole-reload-https
-    eucalyptus-cloud-https-import
+  args:
+    creates: /etc/letsencrypt/live/eucaconsole/fullchain.pem
 
 - name: eucaconsole certbot https renewal
   systemd:
@@ -63,6 +51,6 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    euctl euctl bootstrap.webservices.ssl.server_alias=eucaconsole
+    euctl bootstrap.webservices.ssl.server_alias=eucalyptus-cloud
   delegate_to: "{{ groups.cloud[0] }}"
   when: eucaconsole_certbot_request_service_domains and cloud_system_dns_dnsdomain

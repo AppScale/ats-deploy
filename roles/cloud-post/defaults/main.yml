@@ -1,3 +1,18 @@
 ---
 # Network settings
 net_mode: EDGE
+
+# Eucalyptus management console stack deployment
+eucalyptus_console_cloud_deploy: no
+eucalyptus_console_account: console
+eucalyptus_console_ssh_cidr: "127.0.0.1/32"
+eucalyptus_console_web_cidr: "0.0.0.0/0"
+eucalyptus_console_instance_type: t2.small
+eucalyptus_console_certbot_enable: no
+eucalyptus_console_product: "{{ eucalyptus_product|default('eucalyptus') }}"
+
+# Certbot for eucalyptus-cloud
+eucalyptus_services_certbot_enable: no
+eucalyptus_services_certbot_email: ""
+eucalyptus_services_certbot_certonly_opts: "--no-eff-email"
+eucalyptus_services_endpoints: ['*', '*.s3']

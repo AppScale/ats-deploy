@@ -2,9 +2,14 @@
 # Import HTTPS key/certificate from PEM files
 set -eo pipefail
 
-KEY_ALIAS="eucaconsole"
+KEY_ALIAS="eucalyptus-cloud"
 PEM_KEY="/etc/pki/tls/private/eucaconsole.key"
 PEM_CERTS="/etc/pki/tls/certs/eucaconsole.crt"
+
+if [ -d "${RENEWED_LINEAGE:-/does/not/exist}" ] ; then
+  PEM_KEY="${RENEWED_LINEAGE}/privkey.pem"
+  PEM_CERTS="${RENEWED_LINEAGE}/fullchain.pem"
+fi
 
 while (( "$#" )); do
   IMPORT_ARG="$1"
