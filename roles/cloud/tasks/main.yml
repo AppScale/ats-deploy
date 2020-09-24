@@ -190,13 +190,20 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    euctl system.dns.dnsdomain={{ cloud_system_dns_dnsdomain | quote }}
-    euctl region.region_name={{ cloud_region_region_name | quote }}
+    SERVICES_PORT_OLD="$(euctl -n bootstrap.webservices.port)"
+    SERVICES_CIDR_OLD="$(euctl -n bootstrap.webservices.listener_address_match)"
+    SERVICES_PORT_NEW="{{ cloud_listener_port | quote }}"
+    SERVICES_CIDR_NEW="{{ cloud_listener_cidr | quote }}"
+    euctl system.dns.dnsdomain="{{ cloud_system_dns_dnsdomain | quote }}"
+    euctl region.region_name="{{ cloud_region_region_name | quote }}"
     euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
     euctl bootstrap.webservices.use_instance_dns=true
     euctl bootstrap.webservices.use_dns_delegation=true
-    euctl bootstrap.webservices.port={{ cloud_listener_port | quote }}
-    euctl bootstrap.webservices.listener_address_match={{ cloud_listener_cidr | quote }}
+    if [ "${SERVICES_PORT_OLD}" != "${SERVICES_PORT_NEW}" ] || [ "${SERVICES_CIDR_OLD}" != "${SERVICES_CIDR_NEW}" ] ; then
+      euctl bootstrap.webservices.port="${SERVICES_PORT_NEW}"
+      euctl bootstrap.webservices.listener_address_match="${SERVICES_CIDR_NEW}"
+      sleep 20
+    fi
   register: shell_result
   until: shell_result.rc == 0
   retries: 5
