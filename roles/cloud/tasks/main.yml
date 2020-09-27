@@ -33,6 +33,15 @@
   tags:
     - image
     - packages
+  when: cloud_service_image_rpm
+
+- name: install eucalyptus-service-image-tools package
+  yum:
+    name: eucalyptus-service-image-tools
+    state: present
+  tags:
+    - image
+    - packages
 
 - name: install eucalyptus-walrus package
   yum:
@@ -181,13 +190,20 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    euctl system.dns.dnsdomain={{ cloud_system_dns_dnsdomain | quote }}
-    euctl region.region_name={{ cloud_region_region_name | quote }}
+    SERVICES_PORT_OLD="$(euctl -n bootstrap.webservices.port)"
+    SERVICES_CIDR_OLD="$(euctl -n bootstrap.webservices.listener_address_match)"
+    SERVICES_PORT_NEW="{{ cloud_listener_port | quote }}"
+    SERVICES_CIDR_NEW="{{ cloud_listener_cidr | quote }}"
+    euctl system.dns.dnsdomain="{{ cloud_system_dns_dnsdomain | quote }}"
+    euctl region.region_name="{{ cloud_region_region_name | quote }}"
     euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
     euctl bootstrap.webservices.use_instance_dns=true
     euctl bootstrap.webservices.use_dns_delegation=true
-    euctl bootstrap.webservices.port={{ cloud_listener_port | quote }}
-    euctl bootstrap.webservices.listener_address_match={{ cloud_listener_cidr | quote }}
+    if [ "${SERVICES_PORT_OLD}" != "${SERVICES_PORT_NEW}" ] || [ "${SERVICES_CIDR_OLD}" != "${SERVICES_CIDR_NEW}" ] ; then
+      euctl bootstrap.webservices.port="${SERVICES_PORT_NEW}"
+      euctl bootstrap.webservices.listener_address_match="${SERVICES_CIDR_NEW}"
+      sleep 20
+    fi
   register: shell_result
   until: shell_result.rc == 0
   retries: 5
@@ -226,18 +242,21 @@
   until: shell_result.rc == 0
   retries: 5
 
-- name: install service image
-  shell: |
-    set -eu
-    eval $(clcadmin-assume-system-credentials)
-    esi-install-image --region localhost --install-default
-  register: shell_result
-  changed_when: '"is already registered." not in shell_result.stderr'
-  failed_when:
-    - shell_result.rc != 0
-    - '"is already registered." not in shell_result.stderr'
-  until: shell_result is succeeded
-  retries: 5
+- name: eucalyptus-images image install wrapper
+  copy:
+    src: eucalyptus-images
+    dest: /usr/local/bin/eucalyptus-images
+    owner: root
+    group: root
+    mode: 0755
+
+- name: eucalyptus-system-images system image install utility
+  copy:
+    src: eucalyptus-system-images
+    dest: /usr/local/bin/eucalyptus-system-images
+    owner: root
+    group: root
+    mode: 0755
 
 - name: eucalyptus cloud services https import utility
   copy:
@@ -341,18 +360,48 @@
   args:
     creates: /root/.aws/credentials
 
-- name: eucalyptus-images image install wrapper
-  copy:
-    src: eucalyptus-images
-    dest: /usr/local/bin/eucalyptus-images
-    owner: root
-    group: root
-    mode: 0755
+- name: install service image from rpm
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    if ! euctl services.imaging.worker.image services.loadbalancing.worker.image | grep "[ae]mi-" ; then
+      esi-install-image --force --remove-all
+    fi
+    esi-install-image --install-default
+  register: shell_result
+  changed_when: '"is already registered." not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"is already registered." not in shell_result.stderr'
+  until: shell_result is succeeded
+  retries: 5
+  when: cloud_service_image_rpm
 
-- name: eucalyptus-system-images system image install utility
-  copy:
-    src: eucalyptus-system-images
-    dest: /usr/local/bin/eucalyptus-system-images
-    owner: root
-    group: root
-    mode: 0755
+- name: install service image as system image
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    /usr/local/bin/eucalyptus-system-images --type service --size "{{ cloud_service_image_size | quote }}"
+  register: shell_result
+  changed_when: '"image already installed" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - shell_result.rc != 2
+  when: not cloud_service_image_rpm
+
+- name: configure service image cloud properties
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-assume-system-credentials)
+    SERVICE_IMAGEID=$(euca-describe-images --filter tag:type=eucalyptus-service-image | head -n 1 | grep ^IMAGE | cut -f 2)
+    OLD_IMAGING_IMAGEID=$(euctl -n services.imaging.worker.image)
+    OLD_LOADBALANCING_IMAGEID=$(euctl -n services.loadbalancing.worker.image)
+    if [ "${SERVICE_IMAGEID}" != "${OLD_IMAGING_IMAGEID}" ] || [ "${SERVICE_IMAGEID}" != "${OLD_LOADBALANCING_IMAGEID}" ] ; then
+      euctl services.imaging.worker.image="${SERVICE_IMAGEID}"
+      euctl services.loadbalancing.worker.image="${SERVICE_IMAGEID}"
+    else
+      echo "Service image cloud properties not changed." >&2
+    fi
+  register: shell_result
+  changed_when: '"not changed" not in shell_result.stderr'
+  when: not cloud_service_image_rpm

@@ -6,6 +6,8 @@ cloud_listener_port: "{{ cloud_public_port }}"
 cloud_public_port: 8773
 cloud_properties: {}
 cloud_admin_password: ""
+cloud_service_image_rpm: yes
+cloud_service_image_size: "5"
 
 # EDGE network settings
 edge_subnet: "{{ '172.31.0.0' if edge_bridge_create else ansible_default_ipv4.network }}"
