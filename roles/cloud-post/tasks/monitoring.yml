@@ -1,0 +1,54 @@
+---
+- name: monitoring account
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euare-accountcreate -a "{{ eucalyptus_monitoring_account | quote }}"
+  register: shell_result
+  changed_when: '"EntityAlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"EntityAlreadyExists" not in shell_result.stderr'
+
+- name: monitoring configuration stack
+  shell: |
+    set -eu
+    eval $(clcadmin-impersonate-user -a "{{ eucalyptus_monitoring_account | quote }}")
+    euform-create-stack \
+      --template-file /var/lib/eucalyptus/templates/monitoring-template.yaml \
+      --capabilities CAPABILITY_NAMED_IAM \
+      monitoring
+  register: shell_result
+  changed_when: '"AlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"AlreadyExists" not in shell_result.stderr'
+
+- name: wait for monitoring stack
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-impersonate-user -a "{{ eucalyptus_monitoring_account | quote }}")
+    euform-describe-stacks monitoring | grep CREATE_COMPLETE
+  register: shell_result
+  changed_when: False
+  until: shell_result is succeeded
+  retries: 5
+
+- name: monitoring account user access key
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-impersonate-user -a "{{ eucalyptus_monitoring_account | quote }}")
+    euare-useraddkey -u agent \
+    | xargs -r printf "AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\n" \
+    > /etc/eucalyptus/amazon-cloudwatch-agent.env
+    chmod 644 /etc/eucalyptus/amazon-cloudwatch-agent.env
+  args:
+    creates: /etc/eucalyptus/amazon-cloudwatch-agent.env
+
+- name: monitoring report command
+  copy:
+    src: eucalyptus-monitoring-report
+    dest: /usr/local/bin/eucalyptus-monitoring-report
+    owner: root
+    group: root
+    mode: 0755

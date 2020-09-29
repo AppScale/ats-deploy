@@ -5,6 +5,9 @@
 - import_tasks: console.yml
   when: eucalyptus_console_cloud_deploy and net_mode == "VPCMIDO"
 
+- import_tasks: monitoring.yml
+  when: eucalyptus_monitoring_enable
+
 - import_tasks: certbot.yml
   when: eucalyptus_services_certbot_enable
 

@@ -1,0 +1,5 @@
+<Plugin "interface">
+{% for interface_name in eucalyptus_monitoring_interface_names %}
+  Interface "{{ interface_name | quote }}"
+{% endfor %}
+</Plugin>
