@@ -59,3 +59,6 @@
   roles:
   - cloud-post
 
+- hosts: all
+  roles:
+  - monitoring

@@ -1,0 +1,3 @@
+---
+- import_tasks: monitoring.yml
+  when: eucalyptus_monitoring_enable

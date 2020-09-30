@@ -282,6 +282,14 @@
     group: root
     mode: 0644
 
+- name: cloudformation template for monitoring
+  copy:
+    src: monitoring-template.yaml
+    dest: /var/lib/eucalyptus/templates/monitoring-template.yaml
+    owner: root
+    group: root
+    mode: 0644
+
 - name: cloudformation template for console elastic ip
   copy:
     src: console-eip-template.yaml

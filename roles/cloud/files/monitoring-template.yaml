@@ -1,0 +1,31 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Eucalyptus cloud monitoring user and policy
+
+Parameters:
+
+  MonitoringCidr:
+    Description: The cidr to allow for monitoring clients
+    Type: String
+    Default: "0.0.0.0/0"
+
+Resources:
+
+  User:
+    Type: AWS::IAM::User
+    Properties:
+      Path: "/monitor/"
+      UserName: "agent"
+      Policies:
+        - PolicyName: "put-metrics"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - Action: "cloudwatch:PutMetricData"
+              Resource: "*"
+              Effect: "Allow"
+              Condition:
+                IpAddress:
+                  "aws:SourceIp": !Sub "${MonitoringCidr}"
+

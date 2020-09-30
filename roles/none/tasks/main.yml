@@ -88,9 +88,27 @@
   register: systemd_result
   failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
+- name: disable collectd service
+  systemd:
+    enabled: false
+    state: stopped
+    name: collectd
+  register: systemd_result
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
+
+- name: disable amazon-cloudwatch-agent service
+  systemd:
+    enabled: false
+    state: stopped
+    name: amazon-cloudwatch-agent
+  register: systemd_result
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
+
 - name: remove eucalyptus and dependency packages
   yum:
     name:
+      - amazon-cloudwatch-agent
+      - collectd
       - eucaconsole
       - eucaconsole-selinux
       - eucalyptus
@@ -156,6 +174,8 @@
     path: "/etc/systemd/system/{{ item }}"
     state: absent
   loop:
+  - "amazon-cloudwatch-agent.service"
+  - "amazon-cloudwatch-agent.service.d"
   - "cassandra.service.d"
   - "ceph-osd@.service.d"
   - "certbot-renew.service.d"
@@ -183,6 +203,7 @@
   - "console-manage-stack"
   - "eucalyptus-cloud-https-import"
   - "eucalyptus-images"
+  - "eucalyptus-monitoring-report"
   - "eucalyptus-system-images"
   - "eucalyptus-vpcmidotz-up.sh"
 
@@ -249,6 +270,16 @@
 - name: remove dnsdist configuration
   file:
     path: /etc/dnsdist/dnsdist-eucalyptus.conf
+    state: absent
+
+- name: remove amazon-cloudwatch-agent configuration directory
+  file:
+    path: /opt/aws/amazon-cloudwatch-agent/etc
+    state: absent
+
+- name: remove collectd configuration directory
+  file:
+    path: /etc/collectd.d
     state: absent
 
 - name: remove ceph configuration directory
