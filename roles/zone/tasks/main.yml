@@ -53,8 +53,8 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    ZONE_NAME={{ eucalyptus_zone_name | quote }}
-    ZONE_HOST={{ eucalyptus_host_cluster_ipv4 | quote }}
+    ZONE_NAME="{{ eucalyptus_zone_name | quote }}"
+    ZONE_HOST="{{ eucalyptus_host_cluster_ipv4 | quote }}"
     euserv-register-service -t cluster -h ${ZONE_HOST} -z ${ZONE_NAME} cluster.${ZONE_HOST}
     euserv-register-service -t storage -h ${ZONE_HOST} -z ${ZONE_NAME} storage.${ZONE_HOST}
   delegate_to: "{{ groups.cloud[0] }}"
@@ -62,22 +62,33 @@
   until: shell_result.rc == 0
   retries: 5
 
+- name: configure cloud storage properties for das storage
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    DAS_DEVICE="{{ cloud_storage_dasdevice | quote }}"
+    ZONE_NAME="{{ eucalyptus_zone_name | quote }}"
+    euctl ${ZONE_NAME}.storage.dasdevice=${DAS_DEVICE}
+    euctl ${ZONE_NAME}.storage.blockstoragemanager=das
+  delegate_to: "{{ groups.cloud[0] }}"
+  when: eucalyptus_ceph_conf is undefined and cloud_storage_dasdevice is defined
+
 - name: configure cloud storage properties for overlay storage
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    ZONE_NAME={{ eucalyptus_zone_name | quote }}
+    ZONE_NAME="{{ eucalyptus_zone_name | quote }}"
     euctl ${ZONE_NAME}.storage.blockstoragemanager=overlay
   delegate_to: "{{ groups.cloud[0] }}"
-  when: eucalyptus_ceph_conf is undefined
+  when: eucalyptus_ceph_conf is undefined and cloud_storage_dasdevice is undefined
 
 - name: configure cloud storage properties for ceph storage
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    CEPH_SNAPSHOT_POOL={{ ceph_osd_snapshot_pool | quote }}
-    CEPH_VOLUME_POOL={{ ceph_osd_volume_pool | quote }}
-    ZONE_NAME={{ eucalyptus_zone_name | quote }}
+    CEPH_SNAPSHOT_POOL="{{ ceph_osd_snapshot_pool | quote }}"
+    CEPH_VOLUME_POOL="{{ ceph_osd_volume_pool | quote }}"
+    ZONE_NAME="{{ eucalyptus_zone_name | quote }}"
     euctl ${ZONE_NAME}.storage.cephsnapshotpools=${CEPH_SNAPSHOT_POOL}
     euctl ${ZONE_NAME}.storage.cephvolumepools=${CEPH_VOLUME_POOL}
     euctl ${ZONE_NAME}.storage.blockstoragemanager=ceph-rbd
