@@ -42,6 +42,23 @@
     mode: 0644
   when: eucalyptus_ceph_keyring is defined
 
+- name: tgtd systemd drop-in directory
+  file:
+    path: /etc/systemd/system/tgtd.service.d
+    state: directory
+    mode: 0755
+  when: eucalyptus_ceph_conf is undefined
+
+- name: tgtd systemd drop-in for listening on cluster interface
+  copy:
+    dest: /etc/systemd/system/tgtd.service.d/override.conf
+    mode: 0644
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=/usr/sbin/tgtd -f --iscsi "portal={{ eucalyptus_host_cluster_ipv4 | quote }}:3260" $TGTD_OPTS
+  when: eucalyptus_ceph_conf is undefined
+
 - name: start tgtd service
   systemd:
     enabled: true
