@@ -55,8 +55,6 @@
     enabled: false
     state: stopped
     name: dnsmasq
-  tags:
-    - image
 
 - name: ceph configuration directory
   file:
