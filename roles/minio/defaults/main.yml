@@ -1,0 +1,5 @@
+---
+# MinIO settings
+minio_endpoint: "{{ hostvars[groups['minio'][0]]['eucalyptus_host_cluster_ipv4'] }}:{{ minio_port }}"
+minio_port: 9000
+minio_data_path: /var/lib/minio/data
