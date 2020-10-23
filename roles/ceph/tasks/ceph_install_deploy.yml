@@ -13,6 +13,14 @@
       osd_pool_default_min_size = 1
   when: groups.ceph|length < 3
 
+- name: ceph custom configuration for osds
+  blockinfile:
+    path: /home/ceph-deploy/cluster/ceph.conf
+    marker: '# {mark} eucalyptus ceph osd general configuration'
+    block: |
+      osd_pool_default_pg_num = {{ ceph_osd_pool_pgnum }}
+      osd_pool_default_pgp_num = {{ ceph_osd_pool_pgnum }}
+
 - name: ceph custom configuration for rgw frontends
   blockinfile:
     path: /home/ceph-deploy/cluster/ceph.conf
