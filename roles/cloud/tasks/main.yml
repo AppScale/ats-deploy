@@ -242,6 +242,14 @@
   until: shell_result.rc == 0
   retries: 5
 
+- name: eucalyptus-account account resources utility
+  copy:
+    src: eucalyptus-account
+    dest: /usr/local/bin/eucalyptus-account
+    owner: root
+    group: root
+    mode: 0755
+
 - name: eucalyptus-images image install wrapper
   copy:
     src: eucalyptus-images
