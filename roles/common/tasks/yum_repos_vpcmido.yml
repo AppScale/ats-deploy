@@ -20,31 +20,31 @@
     group: root
     mode: 0644
 
-- name: midokura gpg key
+- name: midonet gpg key
   copy:
-    src: RPM-GPG-KEY-midokura
-    dest: /etc/pki/rpm-gpg/RPM-GPG-KEY-midokura
+    src: RPM-GPG-KEY-midonet
+    dest: /etc/pki/rpm-gpg/RPM-GPG-KEY-midonet
     owner: root
     group: root
     mode: 0644
 
-- name: install midokura gpg key
+- name: install midonet gpg key
   rpm_key:
     state: present
-    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-midokura
+    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-midonet
 
-- name: midokura yum repository
+- name: midonet yum repository
   copy:
-    src: midokura.repo
-    dest: /etc/yum.repos.d/midokura.repo
+    src: midonet.repo
+    dest: /etc/yum.repos.d/midonet.repo
     owner: root
     group: root
     mode: 0644
 
-- name: midokura-misc yum repository
+- name: midonet-misc yum repository
   copy:
-    src: midokura-misc.repo
-    dest: /etc/yum.repos.d/midokura-misc.repo
+    src: midonet-misc.repo
+    dest: /etc/yum.repos.d/midonet-misc.repo
     owner: root
     group: root
     mode: 0644
