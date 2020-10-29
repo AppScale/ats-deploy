@@ -137,6 +137,14 @@
     group: root
     mode: 0644
 
+- name: eucanetd filesystem namespace configuration drop-in
+  copy:
+    src: eucanetd-no-mount-ns.conf
+    dest: /etc/systemd/system/eucanetd.service.d/eucanetd-no-mount-ns.conf
+    owner: root
+    group: root
+    mode: 0644
+
 - name: systemd daemon reload
   systemd:
     daemon_reload: true
