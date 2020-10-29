@@ -1,0 +1,2 @@
+MINIO_ACCESS_KEY=AKIM{{ lookup('password', 'credentials/objectstorage/minio/access_key length=17 chars=ascii_uppercase,2,3,4,5,6,7') }}
+MINIO_SECRET_KEY={{ lookup('password', 'credentials/objectstorage/minio/secret_key length=40 chars=ascii_letters,digits') }}

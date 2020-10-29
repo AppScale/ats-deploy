@@ -1,0 +1,116 @@
+---
+- name: minio application directory
+  file:
+    path: /opt/minio
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - image
+
+- name: minio bin directory
+  file:
+    path: /opt/minio/bin
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - image
+
+- name: minio config directory
+  file:
+    path: /opt/minio/etc
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - image
+
+- name: minio certificates directory
+  file:
+    path: /opt/minio/etc/certs
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - image
+
+- name: minio data directory
+  file:
+    path: /var/lib/minio
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - image
+
+- name: download minio binary
+  get_url:
+    url: https://dl.min.io/server/minio/release/linux-amd64/archive/minio.RELEASE.2020-10-03T02-19-42Z
+    dest: /opt/minio/bin/minio
+    checksum: sha256:d8164b0446c79fc80f5d3a06971fa87fa0ede519c6d253f260fbfba7aa834a0b
+    mode: 0555
+  tags:
+    - image
+
+- name: download mc binary
+  get_url:
+    url: https://dl.min.io/client/mc/release/linux-amd64/archive/mc.RELEASE.2020-10-03T02-54-56Z
+    dest: /opt/minio/bin/mc
+    checksum: sha256:59e184bd4e2c3a8a19837b0f0da3977bd4e301495a24e4a5d50e291728a1de51
+    mode: 0555
+  tags:
+    - image
+
+- name: minio systemd service
+  copy:
+    src: minio.service
+    dest: /etc/systemd/system/minio.service
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - image
+
+- name: minio environment service configuration
+  template:
+    src: minio.j2
+    dest: /etc/sysconfig/minio
+    owner: root
+    group: root
+    mode: 0644
+
+- name: minio environment service secrets configuration
+  template:
+    src: minio-key.j2
+    dest: /etc/sysconfig/minio-key
+    force: no
+    owner: root
+    group: root
+    mode: 0600
+
+- name: minio secrets
+  slurp:
+    path: /etc/sysconfig/minio-key
+  register: slurp_result
+
+- name: start minio service
+  systemd:
+    daemon_reload: true
+    enabled: true
+    state: started
+    name: minio
+
+- name: minio secrets facts
+  set_fact: "eucalyptus_minio_creds_internal={{ ('{' + (slurp_result.content | b64decode).split('\n') | select | map('regex_replace', '([^=]*)=(.*)', '\"\\1\": \"\\2\"') | join(',') + '}') | from_json }}"
+
+- name: minio configuration facts
+  set_fact:
+    eucalyptus_minio_creds: "{{ {'access_key': eucalyptus_minio_creds_internal.MINIO_ACCESS_KEY, 'secret_key': eucalyptus_minio_creds_internal.MINIO_SECRET_KEY } }}"
+    eucalyptus_minio_endpoint: "{{ minio_endpoint }}"
+
