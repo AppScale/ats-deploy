@@ -11,6 +11,8 @@ ceph_osd_volume_pool: eucavolumes
 
 ceph_osd_snapshot_pool: eucasnapshots
 
+ceph_osd_pool_pgnum: 16
+
 ceph_rgw_uid: eucas3
 
 ceph_facts: "{{ True if (ceph_facts_local or ('ceph' in groups and groups['ceph'])) else False }}"
