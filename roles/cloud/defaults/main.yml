@@ -1,7 +1,7 @@
 ---
 # Cloud settings
 cloud_region_region_name: "{{ cloud_region_name }}"
-cloud_listener_cidr: 0.0.0.0/0
+cloud_listener_cidr: 0.0.0.0/32
 cloud_listener_port: "{{ cloud_public_port }}"
 cloud_public_port: 8773
 cloud_properties: {}
