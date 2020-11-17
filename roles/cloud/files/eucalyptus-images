@@ -47,4 +47,4 @@ chroot --userspec="nobody" \
   "${TEMP_DIR}/root" \
   "/usr/bin/python2" -c "import os; import sys; os.chdir('/eucalyptus'); sys.path.insert(0,'/eucalyptus'); execfile('images.py')" "$@"
 
-echo -e "To make image public run:\n\n\teuca-modify-image-attribute -l -a all emi-...\n"
+echo -e "To make image public run:\n\n\teuca-modify-image-attribute -l -a all IMAGE_ID\n"
