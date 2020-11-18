@@ -336,6 +336,18 @@
     group: root
     mode: 0644
 
+- name: create initial accounts
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euare-accountcreate "{{ item | quote }}"
+  register: shell_result
+  changed_when: '"EntityAlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"EntityAlreadyExists" not in shell_result.stderr'
+  with_items: "{{ cloud_initial_accounts | default([]) }}"
+
 - name: admin password/login profile credential
   shell: |
     set -eu
