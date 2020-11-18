@@ -27,11 +27,11 @@ cloud_firewalld_configure: no
 
 cloud_firewalld_cluster_cidr: Null
 
-cloud_firewalld_public_interface: "{{ ansible_default_ipv4.interface }}"
+cloud_firewalld_public_interface: "{{ eucalyptus_host_public_interface }}"
 
 cloud_firewalld_public_zone: public
 
-cloud_firewalld_cluster_interface: Null
+cloud_firewalld_cluster_interface: "{{ eucalyptus_host_cluster_interface if eucalyptus_host_public_interface != eucalyptus_host_cluster_interface else None }}"
 
 cloud_firewalld_cluster_zone: internal
 
