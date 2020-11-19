@@ -44,6 +44,12 @@
     fi
   when: cloud_instances_conf_cpu_passthrough == "1"
 
+- name: libvirtd listen on cluster address
+  replace:
+    path: /etc/libvirt/libvirtd.conf
+    regexp: '^#?\s*listen_addr\s*=\s*".+"$'
+    replace: 'listen_addr = "{{ eucalyptus_host_cluster_ipv4 }}"'
+
 - name: start libvirtd service
   systemd:
     enabled: true
