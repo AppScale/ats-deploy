@@ -66,7 +66,11 @@ net_mode_:
 net_private_interface: "{{ net_mode_[net_mode_lower]['private_interface'] }}"
 net_public_interface: en1
 net_bridge_interface: "{{ net_mode_[net_mode_lower]['bridge_interface'] }}"
+net_instance_dns_servers: Null
 net_node_listen_addr: "{{ eucalyptus_host_cluster_ipv4 }}"
+net_node_metadata_ip: Null
+net_node_metadata_use_vm_private: Null
+net_node_proxy: Null
 net_node_router_enabled: "{{ edge_router_enabled }}"
 net_node_router_ip: "{{ edge_router_ip }}"
 
