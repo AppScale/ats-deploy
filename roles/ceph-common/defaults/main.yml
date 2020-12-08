@@ -19,7 +19,7 @@ ceph_facts: "{{ True if (ceph_facts_local or ('ceph' in groups and groups['ceph'
 
 ceph_facts_local: no
 
-ceph_facts_delegate: "{{ 'localhost' if ceph_facts_local else None|default(omit, True) }}"
+ceph_facts_delegate: "{{ 'localhost' if ceph_facts_local else '' }}"
 
 ceph_facts_path: /root/eucalyptus/ceph
 
