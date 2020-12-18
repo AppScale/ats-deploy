@@ -1,0 +1,111 @@
+# Eucalyptus maintenance playbook for removing nodes from a deployment
+#
+# Use this playbook to remove nodes (not a cluster/zone) from a
+# previously deployed eucalyptus cloud.
+---
+
+# Initialize hosts and facts
+- hosts: all
+  name: initialize host groups
+  gather_facts: no
+  tasks:
+  - name: read eucalyptus configuration
+    slurp:
+      path: /etc/eucalyptus/eucalyptus.conf
+    register: slurp_result
+    delegate_to: "{{ groups.cloud[0] }}"
+  - name: extract nodes from eucalyptus configuration
+    set_fact:
+      eucalyptus_net_mode: "{{ slurp_result.content | b64decode | regex_findall('^\\s*VNET_MODE\\s*=\\s*\"(.*)\"\\s*$', multiline=True) | join('') }}"
+  - import_tasks: host_groups.yml
+    vars:
+      net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+
+- hosts: ceph_object_gateway
+  name: initialize ceph facts
+  roles:
+  - common
+  vars:
+    facts_only: yes
+
+# Detect removed nodes
+- hosts: zone
+  name: collect list of currently configured nodes
+  tasks:
+  - name: set eucalyptus zone facts
+    include_role:
+      name: common
+    vars:
+      facts_only: yes
+      net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+  - name: read eucalyptus configuration
+    slurp:
+      path: /etc/eucalyptus/eucalyptus.conf
+    register: slurp_result
+  - name: extract nodes from eucalyptus configuration
+    set_fact:
+      eucalyptus_zone_node_ips: "{{ slurp_result.content | b64decode | regex_findall('^\\s*NODES\\s*=.*$', multiline=True) | join(' ') | regex_findall('\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b') }}"
+
+- hosts: all
+  name: collect list of removed node hosts
+  tasks:
+  - name: check for eucalyptus configuration
+    stat:
+      path: /etc/eucalyptus/eucalyptus.conf
+    register: stat_result
+  - name: eucalyptus configured fact
+    set_fact:
+      eucalyptus_configuration: yes
+    when: stat_result.stat.exists
+  - name: set eucalyptus node facts
+    include_role:
+      name: common
+    vars:
+      facts_only: yes
+      net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+    when: stat_result.stat.exists
+  - name: currently configured node list
+    set_fact:
+      eucalyptus_node_ips: "{{ (eucalyptus_node_ips | default([])) + hostvars[item]['eucalyptus_zone_node_ips'] }}"
+    with_items: "{{ groups.zone }}"
+  - name: add removed node to host group
+    add_host:
+      groups: old_node
+      hostname: "{{ item }}"
+      inventory_dir: "{{ hostvars[item].inventory_dir }}"
+    changed_when: False
+    when: "hostvars[item].inventory_hostname not in groups.node and hostvars[item].eucalyptus_host_cluster_ipv4 in eucalyptus_node_ips"
+    with_items: "{{ groups.all }}"
+
+# Verify nodes being removed are not in use
+- hosts: old_node
+  name: verify remove node preconditions
+  tasks:
+  - name: check for running instances
+    find:
+      path: /var/run/libvirt/qemu/
+    register: find_result
+  - name: fail on node in use
+    fail:
+      msg: "ERROR: node is in use {{ inventory_hostname }}, cannot remove"
+    when: "find_result.matched > 0"
+
+# Remove old nodes from eucalyptus configuration on clusters
+- hosts: zone
+  name: deregister removed nodes for zone
+  tasks:
+  - name: eucalyptus configuration
+    include_role:
+      name: common
+      tasks_from: base_config
+    vars:
+      facts_only: yes
+      net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+    when: "groups.old_node | default([]) | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | intersect(eucalyptus_zone_node_ips)"
+
+# Clean old nodes
+- hosts: old_node
+  name: clean old nodes
+  roles:
+  - none
+

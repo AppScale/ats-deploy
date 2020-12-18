@@ -1,0 +1,119 @@
+# Eucalyptus maintenance playbook for adding nodes to a deployment
+#
+# Use this playbook to add nodes (not a cluster/zone) to a previously
+# deployed eucalyptus cloud.
+---
+
+# Initialize hosts and facts
+- hosts: all
+  name: initialize host groups
+  gather_facts: no
+  tasks:
+  - name: read eucalyptus configuration
+    slurp:
+      path: /etc/eucalyptus/eucalyptus.conf
+    register: slurp_result
+    delegate_to: "{{ groups.cloud[0] }}"
+  - name: extract nodes from eucalyptus configuration
+    set_fact:
+      eucalyptus_net_mode: "{{ slurp_result.content | b64decode | regex_findall('^\\s*VNET_MODE\\s*=\\s*\"(.*)\"\\s*$', multiline=True) | join('') }}"
+  - import_tasks: host_groups.yml
+    vars:
+      net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+
+- hosts: ceph_object_gateway:midonet_nsdb
+  name: initialize ceph / midonet facts
+  roles:
+  - common
+  vars:
+    facts_only: yes
+
+# Detect new nodes
+- hosts: zone
+  name: collect list of currently configured nodes
+  tasks:
+  - name: set eucalyptus zone facts
+    include_role:
+      name: common
+    vars:
+      facts_only: yes
+      net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+  - name: read eucalyptus configuration
+    slurp:
+      path: /etc/eucalyptus/eucalyptus.conf
+    register: slurp_result
+  - name: extract nodes from eucalyptus configuration
+    set_fact:
+      eucalyptus_zone_node_ips: "{{ slurp_result.content | b64decode | regex_findall('^\\s*NODES\\s*=.*$', multiline=True) | join(' ') | regex_findall('\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b') }}"
+
+- hosts: node
+  name: collect list of new node hosts
+  tasks:
+  - name: set eucalyptus node facts
+    include_role:
+      name: common
+    vars:
+      facts_only: yes
+      key_facts: yes
+      net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+  - name: currently configured node list
+    set_fact:
+      eucalyptus_node_ips: "{{ (eucalyptus_node_ips | default([])) + hostvars[item]['eucalyptus_zone_node_ips'] }}"
+    with_items: "{{ groups.zone }}"
+  - name: add new node to host group
+    add_host:
+      groups: new_node
+      hostname: "{{ item }}"
+      inventory_dir: "{{ hostvars[item].inventory_dir }}"
+    changed_when: False
+    when: "hostvars[item].eucalyptus_host_cluster_ipv4 not in eucalyptus_node_ips"
+    with_items: "{{ groups.node }}"
+
+# Verify new nodes are clean
+- hosts: new_node
+  name: verify new node preconditions
+  tasks:
+  - name: check for existing eucalyptus configuration
+    stat:
+      path: /etc/eucalyptus/eucalyptus.conf
+    register: stat_result
+  - name: fail on new node configured
+    fail:
+      msg: "ERROR: eucalyptus configuration already present on node {{ inventory_hostname }}, cannot add"
+    when: stat_result.stat.exists
+
+# Install / configure node
+- hosts: new_node
+  module_defaults:
+    yum:
+      disablerepo: "{{ eucalyptus_yum_disablerepo | default(omit) }}"
+  roles:
+  - node
+  vars:
+    net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+
+# Add new nodes to eucalyptus configuration on clusters
+- hosts: zone
+  name: register new nodes for zone
+  tasks:
+  - name: eucalyptus configuration
+    include_role:
+      name: common
+      tasks_from: base_config
+    vars:
+      facts_only: yes
+      net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+    when: "eucalyptus_zone_name in (groups.new_node | default([]) | map('extract', hostvars, ['eucalyptus_zone_name']) | list)"
+
+# Add new nodes to vpc tunnel zone
+- hosts: cloud
+  name: vpc tunnel zone update
+  tasks:
+  - name: eucalyptus tunnel zone update
+    command:
+      cmd: /usr/local/bin/eucalyptus-vpcmidotz-up.sh
+    environment:
+      PYTHONPATH: /usr/lib/python2.7/site-packages/WebOb-1.4.1-py2.7.egg/
+      EUCA_TZ_HOST_EXTRAS: "{{ groups.new_node | default([]) | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | sort | join(' ') }}"
+    when: (eucalyptus_net_mode | default('EDGE')) == "VPCMIDO"
+

@@ -1,0 +1,32 @@
+# Eucalyptus maintenance playbook to stop a node running new instances
+#
+# Use this playbook to stop some or all nodes of a previously deployed
+# eucalyptus cloud.
+---
+
+# Stop node services
+- hosts: node:&{{ pattern | default('none') }}
+  name: prevent new instance launch
+  tasks:
+  - name: set eucalyptus node facts
+    include_role:
+      name: common
+    vars:
+      ceph_facts: no
+      facts_only: yes
+      net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+  - name: stop node
+    shell: |
+      set -eu
+      eval $(clcadmin-assume-system-credentials)
+      euserv-modify-service -s STOPPED "{{ eucalyptus_host_cluster_ipv4 | quote }}"
+      sleep 11
+      euserv-describe-services -a "{{ eucalyptus_host_cluster_ipv4 | quote }}"
+    register: shell_result
+    failed_when:
+      - shell_result.rc != 0
+      - '"stopped" not in shell_result.stdout'
+    until: shell_result is succeeded
+    retries: 5
+    delegate_to: "{{ groups.cloud[0] }}"
+

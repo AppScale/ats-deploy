@@ -1,0 +1,24 @@
+# Eucalyptus maintenance playbook to move instances from a node
+#
+# Use this playbook to move running instances in a previously deployed
+# eucalyptus cloud.
+---
+
+# Evict nodes
+- hosts: node:&{{ pattern | default('none') }}
+  name: evict instances
+  tasks:
+  - name: set eucalyptus node facts
+    include_role:
+      name: common
+    vars:
+      ceph_facts: no
+      facts_only: yes
+      net_mode: "{{ eucalyptus_net_mode | default('EDGE') }}"
+  - name: evict node instances
+    shell: |
+      set -eu
+      eval $(clcadmin-assume-system-credentials)
+      euserv-migrate-instances -s "{{ eucalyptus_host_cluster_ipv4 | quote }}"
+    delegate_to: "{{ groups.cloud[0] }}"
+
