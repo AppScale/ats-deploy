@@ -1,5 +1,6 @@
 ---
 - import_tasks: yum_repos.yml
+  when: not (facts_only | default(False))
   tags:
     - image
     - packages
@@ -8,13 +9,15 @@
   tags:
     - image
     - packages
-  when: net_mode == "VPCMIDO"
+  when: not (facts_only | default(False)) and net_mode == "VPCMIDO"
 
 - import_tasks: host_facts.yml
 
 - import_tasks: base_packages.yml
+  when: not (facts_only | default(False))
 
 - import_tasks: base_config.yml
+  when: not (facts_only | default(False))
 
 - name: zone key facts
   include_tasks: key_facts.yml

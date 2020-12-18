@@ -7,6 +7,7 @@
     groups: node
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  changed_when: False
   when: "'node' not in groups"
   with_items: "{{ groups.cloud }}"
 - name: zone group default
@@ -14,14 +15,17 @@
     groups: zone
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  changed_when: False
   when: "'zone' not in groups"
   with_items: "{{ groups.cloud }}"
 - name: zone assignments default
   set_fact: "host_zone_key={{ item.0 + 1 }}"
+  changed_when: False
   when: "'host_zone_key' not in hostvars[inventory_hostname] and inventory_hostname == item.1"
   with_indexed_items: "{{ groups.zone|sort }}"
 - name: node zone assignments default
   set_fact: "host_zone_key={{ (item.0 % (groups.zone|length)) + 1 }}"
+  changed_when: False
   when: "'host_zone_key' not in hostvars[inventory_hostname] and inventory_hostname == item.1"
   with_indexed_items: "{{ groups.node|sort }}"
 
@@ -31,6 +35,7 @@
     groups: console
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  changed_when: False
   when: "'console' not in groups and not eucalyptus_console_cloud_deploy|default(False)"
   with_items: "{{ groups.cloud }}"
 
@@ -40,6 +45,7 @@
     groups: ceph
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  changed_when: False
   when: ceph_converged|default(False)
   with_items: "{{ groups.node }}"
 - name: cloud to ceph_object_gateway group for converged deployments
@@ -47,6 +53,7 @@
     groups: ceph_object_gateway
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  changed_when: False
   when: "ceph_converged|default(False) and ('ceph_object_gateway' not in groups)"
   with_items: "{{ groups.cloud }}"
 - name: ceph_deploy group default
@@ -54,6 +61,7 @@
     groups: ceph_deploy
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  changed_when: False
   when: "'ceph' in groups and groups.ceph and 'ceph_deploy' not in groups"
   with_items: "{{ groups.ceph[0] }}"
 - name: ceph_object_gateway group default
@@ -61,6 +69,7 @@
     groups: ceph_object_gateway
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  changed_when: False
   when: "'ceph' in groups and groups.ceph and 'ceph_object_gateway' not in groups"
   with_items: "{{ groups.ceph[0] }}"
 
@@ -70,6 +79,7 @@
     groups: midonet_nsdb
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  changed_when: False
   when: ceph_converged|default(False) and net_mode|default('EDGE') == 'VPCMIDO'
   with_items: "{{ groups.node }}"
 - name: cloud to midonet_nsdb group for default vpcmido deployments
@@ -77,5 +87,6 @@
     groups: midonet_nsdb
     hostname: "{{ item }}"
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  changed_when: False
   when: "'midonet_nsdb' not in groups and net_mode|default('EDGE') == 'VPCMIDO'"
   with_items: "{{ groups.cloud }}"
