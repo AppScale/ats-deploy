@@ -143,6 +143,10 @@
   command:
     cmd: /usr/sbin/clcadmin-initialize-cloud
     creates: /var/lib/eucalyptus/keys/cloud-cert.pem
+  environment:
+    CLOUD_DB_HOST: "{{ cloud_db_host | default() }}"
+    CLOUD_DB_PORT: "{{ cloud_db_port | default() }}"
+    CLOUD_DB_PASSWORD: "{{ cloud_db_password | default() }}"
 
 - name: start eucalyptus-cloud service
   systemd:

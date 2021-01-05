@@ -1,6 +1,11 @@
 # Eucalyptus cloud configuration
 LOGLEVEL="{{ cloud_log_level }}"
 CLOUD_OPTS="{{ cloud_opts }}"
+{% if cloud_db_host %}
+CLOUD_DB_HOST="{{ cloud_db_host }}"
+CLOUD_DB_PORT="{{ cloud_db_port | default() }}"
+CLOUD_DB_PASSWORD="{{ cloud_db_password }}"
+{% endif %}
 NODES="{% for node in groups.node if (inventory_hostname in groups.zone and eucalyptus_zone_name == hostvars[node]['eucalyptus_zone_name']) %}{{ hostvars[node].eucalyptus_host_cluster_ipv4 }} {% endfor %}"
 HYPERVISOR="kvm"
 INSTANCE_PATH="{{ cloud_instances_state_dir }}"
