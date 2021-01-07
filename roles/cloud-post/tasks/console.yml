@@ -80,10 +80,10 @@
       -p ConsoleIpAddress={{ shell_result.stdout }} \
       eucalyptus-dns
   register: shell_result
-  changed_when: '"AlreadyExists" not in shell_result.stderr'
+  changed_when: '"No updates are to be performed" not in shell_result.stderr'
   failed_when:
     - shell_result.rc != 0
-    - '"AlreadyExists" not in shell_result.stderr'
+    - '"No updates are to be performed" not in shell_result.stderr'
 
 - name: console image identifier lookup
   shell: |
