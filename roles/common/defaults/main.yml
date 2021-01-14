@@ -1,8 +1,9 @@
 ---
 # Eucalyptus package repositories
 eucalyptus_yum_baseurl_master: http://downloads.eucalyptus.cloud/software/eucalyptus/master/rhel/7/x86_64/
+eucalyptus_yum_baseurl_release: http://downloads.eucalyptus.cloud/software/eucalyptus/5/rhel/7/x86_64/
 eucalyptus_yum_baseurl_snapshot: http://downloads.eucalyptus.cloud/software/eucalyptus/snapshot/5/rhel/7/x86_64/
-eucalyptus_yum_baseurl: "{{ eucalyptus_yum_baseurl_snapshot }}"
+eucalyptus_yum_baseurl: "{{ eucalyptus_yum_baseurl_release }}"
 euca2ools_yum_baseurl: http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/
 eucalyptus_yum_gpgcheck: "1"
 eucalyptus_base_yum_enabled: no
