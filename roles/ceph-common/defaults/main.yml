@@ -38,3 +38,5 @@ cloud_firewalld_cluster_zone: internal
 cloud_firewalld_default_zone: trusted
 
 cloud_firewalld_start: yes
+
+cloud_firewalld_always_reload: no
