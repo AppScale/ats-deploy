@@ -76,4 +76,4 @@
     state: reloaded
   tags:
     - firewalld
-  when: cloud_firewalld_cluster_cidr is not none and firewalld_result.changed
+  when: (cloud_firewalld_cluster_cidr is not none and firewalld_result.changed) or cloud_firewalld_always_reload
