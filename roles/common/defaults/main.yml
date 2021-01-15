@@ -31,6 +31,9 @@ cloud_opts_bootstrap_hosts: ""
 cloud_opts_tech_preview: "-Denable.route53.tech.preview=true -Denable.sqs.tech.preview=true"
 cloud_log_level: INFO
 cloud_boostrap_hosts: no
+cloud_db_host: Null
+cloud_db_port: Null
+cloud_db_password: Null
 cloud_instances:
   state_dir: /var/lib/eucalyptus/instances
   conf:
