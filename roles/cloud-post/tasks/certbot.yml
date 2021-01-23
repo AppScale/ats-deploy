@@ -27,6 +27,14 @@
     group: root
     mode: 0644
 
+- name: certbot eucalyptus certificate import hook
+  copy:
+    src: eucalyptus-certbot-hook
+    dest: /usr/local/bin/eucalyptus-certbot-hook
+    owner: root
+    group: root
+    mode: 0755
+
 - name: certbot route53 system domain for eucalyptus-cloud authentication
   shell: |
     set -eu
@@ -114,7 +122,7 @@
       --cert-name eucalyptus-cloud \
       --domain "${SERVICE_DOMAINS}" \
       --dns-route53 \
-      --deploy-hook /usr/local/bin/eucalyptus-cloud-https-import \
+      --deploy-hook /usr/local/bin/eucalyptus-certbot-hook \
       ${EXTRA_OPTS}
   args:
     creates: /etc/letsencrypt/live/eucalyptus-cloud/fullchain.pem
@@ -124,9 +132,3 @@
     enabled: true
     state: started
     name: certbot-renew.timer
-
-- name: configure cloud property for services https
-  shell: |
-    set -eu
-    eval $(clcadmin-assume-system-credentials)
-    euctl bootstrap.webservices.ssl.server_alias=eucalyptus-cloud
