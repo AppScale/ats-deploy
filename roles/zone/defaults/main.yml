@@ -1,0 +1,3 @@
+---
+eucalyptus_package_version: ""
+eucalyptus_package_suffix: "{{ '-' + eucalyptus_package_version if eucalyptus_package_version else '' }}"

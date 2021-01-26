@@ -7,7 +7,7 @@
 
 - name: install eucalyptus-node package
   yum:
-    name: eucalyptus-node
+    name: eucalyptus-node{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image
@@ -16,7 +16,7 @@
 - name: install eucanetd package
   when: net_mode == "EDGE"
   yum:
-    name: eucanetd
+    name: eucanetd{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image
