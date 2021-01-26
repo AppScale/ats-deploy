@@ -1,7 +1,7 @@
 ---
 - name: install eucalyptus-cluster package
   yum:
-    name: eucalyptus-cluster{{ eucalyptus_package_suffix }}
+    name: eucalyptus-cc{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image
@@ -9,7 +9,7 @@
 
 - name: install eucalyptus-storage package
   yum:
-    name: eucalyptus-storage{{ eucalyptus_package_suffix }}
+    name: eucalyptus-sc{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image

@@ -7,7 +7,7 @@
 
 - name: install eucalyptus-node package
   yum:
-    name: eucalyptus-node{{ eucalyptus_package_suffix }}
+    name: eucalyptus-nc{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image
