@@ -76,7 +76,7 @@ fi
 
 if [ "${CMS_ACTION}" = "check" ] ; then
   if ! euform-describe-stacks "console" | grep "^STACK" ; then
-    echo "STACK\tconsole\tNOT_FOUND"
+    echo -e "STACK\tconsole\tNOT_FOUND"
   fi
 elif  [ "${CMS_ACTION}" = "create" ] ; then
   if [ -z "${CONSOLE_EIPALLOCID}" ] || [ -z "${CONSOLE_SUBNETID}" ] || [ -z "${CONSOLE_VPCID}" ] ; then
