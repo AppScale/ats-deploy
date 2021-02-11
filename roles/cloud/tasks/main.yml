@@ -20,7 +20,7 @@
 
 - name: install eucalyptus-cloud package
   yum:
-    name: eucalyptus-cloud
+    name: eucalyptus-cloud{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image
@@ -45,7 +45,7 @@
 
 - name: install eucalyptus-walrus package
   yum:
-    name: eucalyptus-walrus
+    name: eucalyptus-walrus{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image
@@ -54,7 +54,7 @@
 
 - name: install eucanetd package
   yum:
-    name: eucanetd
+    name: eucanetd{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image

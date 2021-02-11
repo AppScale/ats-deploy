@@ -9,7 +9,7 @@
 
 - name: install eucalyptus package
   yum:
-    name: eucalyptus
+    name: eucalyptus{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image

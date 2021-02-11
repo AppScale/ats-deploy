@@ -1,8 +1,13 @@
 ---
+eucalyptus_package_version: ""
+eucalyptus_package_suffix: "{{ '-' + eucalyptus_package_version if eucalyptus_package_version else '' }}"
+
 # Console
 eucaconsole_product: "{{ eucalyptus_product }}"
 eucaconsole_ats_product_url: https://www.appscale.com/product/
 eucaconsole_firewalld_configure: yes
+eucaconsole_package_version: ""
+eucaconsole_package_suffix: "{{ ( '-' + eucaconsole_package_version ) if eucaconsole_package_version else eucalyptus_package_suffix }}"
 
 # Certbot
 eucaconsole_certbot_configure: no

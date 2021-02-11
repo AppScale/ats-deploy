@@ -1,4 +1,7 @@
 ---
+eucalyptus_package_version: ""
+eucalyptus_package_suffix: "{{ '-' + eucalyptus_package_version if eucalyptus_package_version else '' }}"
+
 # Cloud settings
 cloud_region_region_name: "{{ cloud_region_name }}"
 cloud_listener_cidr: 0.0.0.0/32
