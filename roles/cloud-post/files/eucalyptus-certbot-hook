@@ -10,6 +10,7 @@ set -eo pipefail
 KEY_ALIAS_A="eucalyptus-cloud-a"
 KEY_ALIAS_B="eucalyptus-cloud-b"
 KEY_ALIAS_PROP="bootstrap.webservices.ssl.server_alias"
+SERVICE_PORT_PROP="bootstrap.webservices.port"
 
 KEY_ALIAS_CURRENT=$(euctl -n "${KEY_ALIAS_PROP}")
 KEY_ALIAS_NEXT="${KEY_ALIAS_A}"
@@ -17,6 +18,7 @@ if [ "${KEY_ALIAS_CURRENT}" = "${KEY_ALIAS_A}" ] ; then
   KEY_ALIAS_NEXT="${KEY_ALIAS_B}"
 fi
 
+TARGET_PORT=$(euctl -n "${SERVICE_PORT_PROP}")
 TARGET_HOSTS=$(euserv-describe-services \
   --filter service-type=cluster \
   --filter service-type=eucalyptus \
@@ -27,7 +29,7 @@ TARGET_HOSTS=$(euserv-describe-services \
 [ -n "${TARGET_HOSTS}" ] || { echo "No hosts found" >&2; exit 3; }
 
 for TARGET_HOST in ${TARGET_HOSTS} ; do
-  export EUCA_PROPERTIES_URL="https://${TARGET_HOST}:8773/services/Properties"
+  export EUCA_PROPERTIES_URL="https://${TARGET_HOST}:${TARGET_PORT}/services/Properties"
   "/usr/local/bin/eucalyptus-cloud-https-import" --alias "${KEY_ALIAS_NEXT}" "$@"
 done
 
