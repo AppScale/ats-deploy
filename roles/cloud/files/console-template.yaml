@@ -214,7 +214,7 @@ Resources:
               [Unit]
               Description=Eucalyptus Console Certbot Initialization
               After=eucaconsole.service
-              Requires=eucaconsole.service
+              Wants=eucaconsole.service
               AssertPathExists=/etc/eucaconsole/eucaconsole-domain.txt
               
               [Service]
