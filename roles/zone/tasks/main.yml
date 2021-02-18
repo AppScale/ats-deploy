@@ -109,6 +109,7 @@
     euctl ${ZONE_NAME}.storage.cephsnapshotpools=${CEPH_SNAPSHOT_POOL}
     euctl ${ZONE_NAME}.storage.cephvolumepools=${CEPH_VOLUME_POOL}
     euctl ${ZONE_NAME}.storage.blockstoragemanager=ceph-rbd
+    euctl ${ZONE_NAME}.storage.shouldtransfersnapshots=false
   delegate_to: "{{ groups.cloud[0] }}"
   when: eucalyptus_ceph_conf is defined
 
