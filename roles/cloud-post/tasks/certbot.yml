@@ -107,6 +107,7 @@
   shell: |
     set -eu
     SERVICE_DOMAINS="{{ eucalyptus_services_endpoints | map('regex_replace', '^(.*)$', '\1.' + cloud_system_dns_dnsdomain) | list | unique | sort | join(',') }}"
+    SERVICE_DOMAINS="${SERVICE_DOMAINS},{{ eucalyptus_services_endpoints | map('regex_replace', '^(.*)$', '\1.' + cloud_region_name + '.' + cloud_system_dns_dnsdomain) | list | unique | sort | join(',') }}"
     REGISTRATION_EMAIL={{ eucalyptus_services_certbot_email | quote }}
     EXTRA_OPTS={{ eucalyptus_services_certbot_certonly_opts | quote }}
     if [ -z "${REGISTRATION_EMAIL}" ] ; then
