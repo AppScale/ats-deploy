@@ -28,7 +28,7 @@
     block: |
       [client.rgw.{{ hostvars[item].ansible_hostname }}]
       rgw_frontends = civetweb port={{ hostvars[item].eucalyptus_host_cluster_ipv4 }}:7480
-  with_items: "{{ groups.ceph_object_gateway }}"
+  loop: "{{ groups.ceph_object_gateway }}"
 
 - name: ceph custom configuration for mons
   blockinfile:
@@ -38,7 +38,7 @@
       [mon.{{ hostvars[item].ansible_hostname }}]
       host = {{ hostvars[item].ansible_hostname }}
       mon addr = {{ hostvars[item].eucalyptus_host_cluster_ipv4 }}:6789
-  with_items: "{{ groups.ceph }}"
+  loop: "{{ groups.ceph }}"
 
 - name: ceph-deploy install
   command:
@@ -64,30 +64,30 @@
 - name: create osds
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd create --data {{ ceph_osd_data_path }} {{ hostvars[item].ansible_hostname }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd create --data {{ item[1] }} {{ hostvars[item[0]].ansible_hostname }}"
   when: ceph_osd_create
-  with_items: "{{ groups.ceph }}"
+  loop: "{{ groups.ceph | product(ceph_osd_data_paths) | list }}"
 
 - name: prepare osds
   command:
     chdir: /home/ceph-deploy/cluster
     cmd: "ceph-deploy {{ ceph_deploy_opts }} osd prepare {{ hostvars[item].ansible_hostname }}:{{ ceph_osd_data_path }}"
   when: not ceph_osd_create
-  with_items: "{{ groups.ceph }}"
+  loop: "{{ groups.ceph }}"
 
 - name: activate osds
   command:
     chdir: /home/ceph-deploy/cluster
     cmd: "ceph-deploy {{ ceph_deploy_opts }} osd activate {{ hostvars[item].ansible_hostname }}:{{ ceph_osd_data_path }}"
   when: not ceph_osd_create
-  with_items: "{{ groups.ceph }}"
+  loop: "{{ groups.ceph }}"
 
 - name: ceph-deploy rgw install hammer
   command:
     chdir: /home/ceph-deploy/cluster
     cmd: "ceph-deploy {{ ceph_deploy_opts }} install --release {{ ceph_release }} --rgw {{ hostvars[item].ansible_hostname }}"
   when: ceph_release == "hammer"
-  with_items: "{{ groups.ceph_object_gateway }}"
+  loop: "{{ groups.ceph_object_gateway }}"
 
 - name: install ceph-radosgw package
   yum:
@@ -95,10 +95,10 @@
     state: present
   become: no
   delegate_to: "{{ item }}"
-  with_items: "{{ groups.ceph_object_gateway }}"
+  loop: "{{ groups.ceph_object_gateway }}"
 
 - name: ceph-deploy rgw create
   command:
     chdir: /home/ceph-deploy/cluster
     cmd: "ceph-deploy {{ ceph_deploy_opts }} rgw create {{ hostvars[item].ansible_hostname }}"
-  with_items: "{{ groups.ceph_object_gateway }}"
+  loop: "{{ groups.ceph_object_gateway }}"

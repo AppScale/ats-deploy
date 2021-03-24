@@ -7,6 +7,9 @@ ceph_cluster_network: "{{ ceph_public_network }}"
 
 ceph_osd_data_path: /var/lib/ceph-osd/osd0
 
+ceph_osd_data_paths:
+  - "{{ ceph_osd_data_path }}"
+
 ceph_osd_volume_pool: eucavolumes
 
 ceph_osd_snapshot_pool: eucasnapshots
