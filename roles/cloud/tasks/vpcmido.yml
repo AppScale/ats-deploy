@@ -159,10 +159,14 @@
 - name: eucalyptus firewalld midonet gateway service
   template:
     src: firewalld-service-euca-vpcmidogw.xml.j2
-    dest: /etc/firewalld/services/euca-vpcmidogw.xml
+    dest: "/etc/firewalld/services/euca-vpcmidogw-{{ cidr_index }}.xml"
     owner: root
     group: root
     mode: 0644
+  loop: "{{ vpcmido_public_ip_cidrs }}"
+  loop_control:
+    index_var: cidr_index
+    loop_var: cidr
   tags:
     - firewalld
 
