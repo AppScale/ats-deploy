@@ -12,11 +12,15 @@ InstanceDnsServers:
 {% endif %}
 
 PublicIps:
-- "{{ net_public_ip_range }}"
+{% for range in net_public_ip_ranges %}
+- "{{ range }}"
+{% endfor %}
 
 {% if net_mode == 'EDGE' %}
 PrivateIps:
-- "{{ net_private_ip_range }}"
+{% for range in net_private_ip_ranges %}
+- "{{ range }}"
+{% endfor %}
 
 Subnets:
 - Gateway: "{{ edge_gateway }}"

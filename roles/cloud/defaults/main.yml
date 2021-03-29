@@ -21,6 +21,10 @@ edge_netmask: "{{ '255.255.0.0' if edge_bridge_create else ansible_default_ipv4.
 edge_gateway: "{{ '172.31.0.1' if edge_bridge_create else ansible_default_ipv4.gateway }}"
 edge_private_ip_range: "{{ '172.31.0.2-172.31.0.254' if edge_bridge_create else '192.168.254.150-192.168.254.199' }}"
 edge_public_ip_range: 192.168.254.200-192.168.254.249
+edge_private_ip_ranges:
+  - "{{ edge_private_ip_range }}"
+edge_public_ip_ranges:
+  - "{{ edge_public_ip_range }}"
 
 # Firewalld settings
 cloud_firewalld_configure: no
@@ -37,6 +41,10 @@ midonet_midolman_heap: Null
 # VPCMIDO network settings
 vpcmido_public_ip_range: 192.168.254.150-192.168.254.250
 vpcmido_public_ip_cidr: 192.168.254.128/25
+vpcmido_public_ip_ranges:
+  - "{{ vpcmido_public_ip_range }}"
+vpcmido_public_ip_cidrs:
+  - "{{ vpcmido_public_ip_cidr }}"
 vpcmido_gw_ext_cidr: 10.234.234.224/27
 vpcmido_gw_ext_device: euca-mgw-veth1
 vpcmido_gw_ext_ip: 10.234.234.235
@@ -51,10 +59,10 @@ net_mode: EDGE
 net_mode_lower: "{{ net_mode | lower }}"
 net_mode_:
   edge:
-    private_ip_range: "{{ edge_private_ip_range }}"
-    public_ip_range: "{{ edge_public_ip_range }}"
+    private_ip_ranges: "{{ edge_private_ip_ranges }}"
+    public_ip_ranges: "{{ edge_public_ip_ranges }}"
   vpcmido:
-    private_ip_range: Null
-    public_ip_range: "{{ vpcmido_public_ip_range }}"
-net_private_ip_range: "{{ net_mode_[net_mode_lower]['private_ip_range'] }}"
-net_public_ip_range: "{{ net_mode_[net_mode_lower]['public_ip_range'] }}"
+    private_ip_ranges: Null
+    public_ip_ranges: "{{ vpcmido_public_ip_ranges }}"
+net_private_ip_ranges: "{{ net_mode_[net_mode_lower]['private_ip_ranges'] }}"
+net_public_ip_ranges: "{{ net_mode_[net_mode_lower]['public_ip_ranges'] }}"
