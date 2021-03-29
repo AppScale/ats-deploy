@@ -29,7 +29,7 @@ TARGET_HOSTS=$(euserv-describe-services \
 [ -n "${TARGET_HOSTS}" ] || { echo "No hosts found" >&2; exit 3; }
 
 for TARGET_HOST in ${TARGET_HOSTS} ; do
-  export EUCA_PROPERTIES_URL="https://${TARGET_HOST}:${TARGET_PORT}/services/Properties"
+  export EUCA_PROPERTIES_URL="http://${TARGET_HOST}:${TARGET_PORT}/services/Properties"
   "/usr/local/bin/eucalyptus-cloud-https-import" --alias "${KEY_ALIAS_NEXT}" "$@"
 done
 
