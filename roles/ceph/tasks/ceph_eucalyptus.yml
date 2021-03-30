@@ -14,6 +14,7 @@
     creates: /root/eucalyptus/ceph/ceph.conf
   environment:
     EUCA_CEPH_ARTIFACTS_DIR: /root/eucalyptus/ceph
+    EUCA_CEPH_MIN_CLIENT: "{{ ceph_release | default }}"
     EUCA_CEPH_RGW_UID: "{{ ceph_rgw_uid }}"
     EUCA_CEPH_SNAPSHOT_POOL_NAME: "{{ ceph_osd_snapshot_pool }}"
     EUCA_CEPH_VOLUME_POOL_NAME: "{{ ceph_osd_volume_pool }}"
