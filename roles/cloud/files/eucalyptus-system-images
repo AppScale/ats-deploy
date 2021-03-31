@@ -2,9 +2,9 @@
 # Eucalyptus system image management script
 set -euo pipefail
 
-IMAGE_SIZE="5"
+IMAGE_SIZE="1"
 IMAGE_TYPE="console" # or service
-IMAGE_REPORT="no"
+IMAGE_REPORT="yes"
 
 while (( "$#" )); do
   IMAGES_ARG="$1"
@@ -14,14 +14,16 @@ while (( "$#" )); do
       ;;
     --size)
       shift
+      IMAGE_REPORT="no"
       IMAGE_SIZE="$1"
       ;;
     --type)
       shift
+      IMAGE_REPORT="no"
       IMAGE_TYPE="$1"
       ;;
     *)
-      echo -e "Usage:\n\n\teucalyptus-system-images [--report] [--size SIZE] [--type (console|service)]\n"
+      echo -e "Usage:\n\n\teucalyptus-system-images [--report] [--size SIZE] [--type (console|container|service)]\n"
       exit 1
       ;;
   esac
@@ -32,16 +34,19 @@ IMAGE_TMPDIR="/var/lib/eucalyptus/upgrade"
 IMAGE_TEMPLATE="image.XXXXXXXX"
 IMAGE_URL_PREFIX="https://downloads.eucalyptus.cloud/software/eucalyptus/images"
 IMAGE_FULL_TYPE="eucalyptus-${IMAGE_TYPE}-image"
-IMAGE_LATEST_URL="${IMAGE_URL_PREFIX}/latest-${IMAGE_FULL_TYPE}.txt"
+IMAGE_EUCALYPTUS_VERSION="$(</etc/eucalyptus/eucalyptus-version)"
+IMAGE_LATEST_URL="${IMAGE_URL_PREFIX}/${IMAGE_EUCALYPTUS_VERSION%%.*}/latest-${IMAGE_FULL_TYPE}.txt"
 
 if [ "yes" = "${IMAGE_REPORT}" ] ; then
-  for IMAGE_TYPE in "console" "service" ; do
+  for IMAGE_TYPE in "console" "container" "service" ; do
     IMAGE_FULL_TYPE="eucalyptus-${IMAGE_TYPE}-image"
-    IMAGE_LATEST_URL="${IMAGE_URL_PREFIX}/latest-${IMAGE_FULL_TYPE}.txt"
-    IMAGE_URL=$(wget --quiet --output-document - ${IMAGE_LATEST_URL} | grep "${IMAGE_URL_PREFIX}")
-    IMAGE_NAME=$(basename "${IMAGE_URL}")
-    IMAGE_VERSION_DOT=$(echo "${IMAGE_NAME}" | sed 's/.raw.xz$//' | cut --delimiter "-" --output-delimiter "." --fields "4-10")
-    echo -e "TYPE\t${IMAGE_FULL_TYPE}\tVERSION\t${IMAGE_VERSION_DOT}"
+    IMAGE_LATEST_URL="${IMAGE_URL_PREFIX}/${IMAGE_EUCALYPTUS_VERSION%%.*}/latest-${IMAGE_FULL_TYPE}.txt"
+    if wget --quiet --spider ${IMAGE_LATEST_URL} ; then
+      IMAGE_URL=$(wget --quiet --output-document - ${IMAGE_LATEST_URL} | grep "${IMAGE_URL_PREFIX}")
+      IMAGE_NAME=$(basename "${IMAGE_URL}")
+      IMAGE_VERSION_DOT=$(echo "${IMAGE_NAME}" | sed 's/.raw.xz$//' | cut --delimiter "-" --output-delimiter "." --fields "4-10")
+      echo -e "TYPE\t${IMAGE_FULL_TYPE}\tVERSION\t${IMAGE_VERSION_DOT}"
+    fi
   done
   exit 0
 fi
