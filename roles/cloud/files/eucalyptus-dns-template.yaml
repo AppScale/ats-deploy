@@ -95,13 +95,8 @@ Resources:
           - !Ref "SystemDnsDomain"
           - !Ref "AWS::URLSuffix"
       ResourceRecords:
-      - !Sub
-        - "compute.${SystemDomain}"
-        - SystemDomain: !If
-          - UseSystemDnsDomainParameter
-          - !Ref "SystemDnsDomain"
-          - !Ref "AWS::URLSuffix"
-      TTL: 1800
+      - !Ref ConsoleCname
+      TTL: 900
       Type: CNAME
 
 Outputs:

@@ -1,21 +1,13 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  Eucalyptus Console VPC template for use with console image
+  Eucalyptus Console VPC with ELB template for use with console image
 
 Parameters:
 
   ElasticIpAllocationId:
     Description: The allocation identifier for the console public IP
     Type: String
-
-  EnableCertbot:
-    Description: Provision HTTPS certificate using certbot
-    Type: String
-    AllowedValues:
-    - "yes"
-    - "no"
-    Default: "no"
 
   Branding:
     Description: Console branding
@@ -43,6 +35,10 @@ Parameters:
     Description: EC2 keypair for instance SSH access
     Type: String
     Default: ''
+
+  ServerCertificateId:
+    Description: The arn of the server certificate to use
+    Type: String
 
   SubnetId:
     Description: The subnet to use
@@ -85,16 +81,31 @@ Mappings:
 
 Resources:
 
-  SecurityGroup:
+  ConsoleSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Console security group
+      GroupDescription: Console backend security group
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: '22'
           ToPort: '22'
           CidrIp: !Ref SshCidr
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt LoadBalancerSecurityGroup.GroupId
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !GetAtt LoadBalancerSecurityGroup.GroupId
+
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Console loadbalancer security group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
@@ -141,7 +152,7 @@ Resources:
       IamInstanceProfile: !Ref InstanceProfile
       AssociatePublicIpAddress: true
       SecurityGroups:
-      - !Ref SecurityGroup
+      - !Ref ConsoleSecurityGroup
       KeyName: !If
       - UseKeyNameParameter
       - !Ref 'KeyName'
@@ -151,6 +162,15 @@ Resources:
         - |
           #cloud-config
           write_files:
+          - path: /etc/eucaconsole/nginx.conf.d/30-nginx-elb.conf
+            permissions: "0644"
+            owner: root
+            content: |
+              # nginx configuration fragment for ELB headers
+              set_real_ip_from  10.0.0.0/8;
+              set_real_ip_from  172.16.0.0/12;
+              set_real_ip_from  192.168.0.0/16;
+              real_ip_header    X-Forwarded-For;
           - path: /etc/eucaconsole/nginx.conf.d/40-nginx-ats-static.conf
             permissions: "0644"
             owner: root
@@ -207,27 +227,6 @@ Resources:
             permissions: "0644"
             owner: root
             content: ${ElasticIpAllocationId}
-          - path: /etc/systemd/system/eucaconsole-certbot-init.service
-            permissions: "0644"
-            owner: root
-            content: |
-              [Unit]
-              Description=Eucalyptus Console Certbot Initialization
-              After=eucaconsole.service
-              Wants=eucaconsole.service
-              AssertPathExists=/etc/eucaconsole/eucaconsole-domain.txt
-              
-              [Service]
-              Type=simple
-              ExecStart=/bin/sh -c "[ -d /etc/letsencrypt/live/eucaconsole ] || { sleep 30; /usr/bin/eucaconsole-certbot-init $(</etc/eucaconsole/eucaconsole-domain.txt); }"
-              RemainAfterExit=true
-              Restart=on-failure
-              RestartSec=60
-              StartLimitInterval=24h
-              StartLimitBurst=2
-              TimeoutStartSec=300
-          runcmd:
-          - "[ ${EnableCertbot} != yes ] || systemctl enable --now eucaconsole-certbot-init.service"
         - ImageFavicon: !FindInMap
           - Brandings
           - !Ref Branding
@@ -254,8 +253,50 @@ Resources:
       MinSize: 0
       MaxSize: 1
       DesiredCapacity: 1
+      LoadBalancerNames:
+      - !Ref LoadBalancer
       Tags:
       - Key: Name
         Value: eucalyptus-console
         PropagateAtLaunch: true
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      LoadBalancerName: console
+      ConnectionSettings:
+        IdleTimeout: 10
+      Listeners:
+        - InstancePort: 80
+          InstanceProtocol: HTTP
+          LoadBalancerPort: 80
+          Protocol: HTTP
+        - InstancePort: 443
+          InstanceProtocol: HTTPS
+          LoadBalancerPort: 443
+          Protocol: HTTPS
+          SSLCertificateId: !Ref ServerCertificateId
+      Scheme: internet-facing
+      SecurityGroups:
+        - !GetAtt LoadBalancerSecurityGroup.GroupId
+      Subnets:
+        - !Ref SubnetId
+
+Outputs:
+
+  LoadBalancerName:
+    Description: The name of the created ELB
+    Value: !Ref LoadBalancer
+
+  CanonicalHostedZoneName:
+    Description: The CanonicalHostedZoneName for the ELB
+    Value: !GetAtt LoadBalancer.CanonicalHostedZoneName
+
+  CanonicalHostedZoneNameID:
+    Description: The CanonicalHostedZoneNameID for the ELB
+    Value: !GetAtt LoadBalancer.CanonicalHostedZoneNameID
+
+  DNSName:
+    Description: The DNSName for the ELB
+    Value: !GetAtt LoadBalancer.DNSName
 
