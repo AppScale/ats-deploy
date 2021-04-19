@@ -20,6 +20,21 @@ Parameters:
     Type: String
     Default: ""
 
+  ConsoleTTL:
+    Description: TTL for Eucalyptus Console record
+    Type: String
+    Default: "900"
+
+  NegativeTTL:
+    Description: Negative TTL for the zone SOA record
+    Type: String
+    Default: "5"
+
+  TTL:
+    Description: Default TTL for the zone
+    Type: String
+    Default: "60"
+
 Conditions:
 
   CreateConsoleARecordSet: !Not
@@ -59,12 +74,12 @@ Resources:
         - !Ref "AWS::URLSuffix"
       ResourceRecords:
       - !Sub
-        - "ns1.${SystemDomain}. root.${SystemDomain}. 1 3600 600 86400 3600"
+        - "ns1.${SystemDomain}. root.${SystemDomain}. 1 1200 180 2419200 ${NegativeTTL}"
         - SystemDomain: !If
           - UseSystemDnsDomainParameter
           - !Ref "SystemDnsDomain"
           - !Ref "AWS::URLSuffix"
-      TTL: 60
+      TTL: !Ref TTL
       Type: SOA
 
   ConsoleARecordSet:
@@ -80,7 +95,7 @@ Resources:
           - !Ref "AWS::URLSuffix"
       ResourceRecords:
       - !Ref ConsoleIpAddress
-      TTL: 900
+      TTL: !Ref ConsoleTTL
       Type: A
 
   ConsoleCnameRecordSet:
@@ -96,7 +111,7 @@ Resources:
           - !Ref "AWS::URLSuffix"
       ResourceRecords:
       - !Ref ConsoleCname
-      TTL: 900
+      TTL: !Ref ConsoleTTL
       Type: CNAME
 
 Outputs:
