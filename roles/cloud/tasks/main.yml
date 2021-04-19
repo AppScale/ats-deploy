@@ -324,6 +324,14 @@
     group: root
     mode: 0644
 
+- name: cloudformation template for console with custom https
+  copy:
+    src: console-elb-template.yaml
+    dest: /var/lib/eucalyptus/templates/console-elb-template.yaml
+    owner: root
+    group: root
+    mode: 0644
+
 - name: tools configuration directory
   file:
     path: /root/.euca
