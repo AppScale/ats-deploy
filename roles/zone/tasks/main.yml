@@ -56,7 +56,7 @@
     content: |
       [Service]
       ExecStart=
-      ExecStart=/usr/sbin/tgtd -f --iscsi "portal={{ eucalyptus_host_cluster_ipv4 | quote }}:3260" $TGTD_OPTS
+      ExecStart=/usr/sbin/tgtd -f --iscsi "portal={{ eucalyptus_host_cluster_ipv4 }}:3260" $TGTD_OPTS
   when: eucalyptus_ceph_conf is undefined
 
 - name: start tgtd service
@@ -70,10 +70,10 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    ZONE_NAME="{{ eucalyptus_zone_name | quote }}"
-    ZONE_HOST="{{ eucalyptus_host_cluster_ipv4 | quote }}"
-    euserv-register-service -t cluster -h ${ZONE_HOST} -z ${ZONE_NAME} cluster.${ZONE_HOST}
-    euserv-register-service -t storage -h ${ZONE_HOST} -z ${ZONE_NAME} storage.${ZONE_HOST}
+    ZONE_NAME={{ eucalyptus_zone_name | quote }}
+    ZONE_HOST={{ eucalyptus_host_cluster_ipv4 | quote }}
+    euserv-register-service -t cluster -h "${ZONE_HOST}" -z "${ZONE_NAME}" "cluster.${ZONE_HOST}"
+    euserv-register-service -t storage -h "${ZONE_HOST}" -z "${ZONE_NAME}" "storage.${ZONE_HOST}"
   delegate_to: "{{ groups.cloud[0] }}"
   register: shell_result
   until: shell_result.rc == 0
@@ -83,10 +83,10 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    DAS_DEVICE="{{ cloud_storage_dasdevice | quote }}"
-    ZONE_NAME="{{ eucalyptus_zone_name | quote }}"
-    euctl ${ZONE_NAME}.storage.dasdevice=${DAS_DEVICE}
-    euctl ${ZONE_NAME}.storage.blockstoragemanager=das
+    DAS_DEVICE={{ cloud_storage_dasdevice | quote }}
+    ZONE_NAME={{ eucalyptus_zone_name | quote }}
+    euctl "${ZONE_NAME}.storage.dasdevice"="${DAS_DEVICE}"
+    euctl "${ZONE_NAME}.storage.blockstoragemanager"=das
   delegate_to: "{{ groups.cloud[0] }}"
   when: eucalyptus_ceph_conf is undefined and cloud_storage_dasdevice is defined
 
@@ -94,8 +94,8 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    ZONE_NAME="{{ eucalyptus_zone_name | quote }}"
-    euctl ${ZONE_NAME}.storage.blockstoragemanager=overlay
+    ZONE_NAME={{ eucalyptus_zone_name | quote }}
+    euctl "${ZONE_NAME}.storage.blockstoragemanager"=overlay
   delegate_to: "{{ groups.cloud[0] }}"
   when: eucalyptus_ceph_conf is undefined and cloud_storage_dasdevice is undefined
 
@@ -103,13 +103,13 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    CEPH_SNAPSHOT_POOL="{{ ceph_osd_snapshot_pool | quote }}"
-    CEPH_VOLUME_POOL="{{ ceph_osd_volume_pool | quote }}"
-    ZONE_NAME="{{ eucalyptus_zone_name | quote }}"
-    euctl ${ZONE_NAME}.storage.cephsnapshotpools=${CEPH_SNAPSHOT_POOL}
-    euctl ${ZONE_NAME}.storage.cephvolumepools=${CEPH_VOLUME_POOL}
-    euctl ${ZONE_NAME}.storage.blockstoragemanager=ceph-rbd
-    euctl ${ZONE_NAME}.storage.shouldtransfersnapshots=false
+    CEPH_SNAPSHOT_POOL={{ ceph_osd_snapshot_pool | quote }}
+    CEPH_VOLUME_POOL={{ ceph_osd_volume_pool | quote }}
+    ZONE_NAME={{ eucalyptus_zone_name | quote }}
+    euctl "${ZONE_NAME}.storage.cephsnapshotpools"="${CEPH_SNAPSHOT_POOL}"
+    euctl "${ZONE_NAME}.storage.cephvolumepools"="${CEPH_VOLUME_POOL}"
+    euctl "${ZONE_NAME}.storage.blockstoragemanager"=ceph-rbd
+    euctl "${ZONE_NAME}.storage.shouldtransfersnapshots"=false
   delegate_to: "{{ groups.cloud[0] }}"
   when: eucalyptus_ceph_conf is defined
 

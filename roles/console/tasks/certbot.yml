@@ -16,9 +16,9 @@
 - name: eucaconsole certbot https
   shell: |
     set -eu
-    CONSOLE_DOMAIN="{{ eucaconsole_certbot_domain | quote }}"
-    REGISTRATION_EMAIL="{{ eucaconsole_certbot_email | quote }}"
-    EXTRA_OPTS="{{ eucaconsole_certbot_certonly_opts | quote }}"
+    CONSOLE_DOMAIN={{ eucaconsole_certbot_domain | quote }}
+    REGISTRATION_EMAIL={{ eucaconsole_certbot_email | quote }}
+    EXTRA_OPTS={{ eucaconsole_certbot_certonly_opts | quote }}
     if [ -z "${REGISTRATION_EMAIL}" ] ; then
       EXTRA_OPTS="${EXTRA_OPTS} --register-unsafely-without-email"
     else

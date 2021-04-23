@@ -3,12 +3,12 @@
 # See console-manage-stack
 #
 
-CONSOLE_BRANDING="{{ eucalyptus_console_product | quote }}"
+CONSOLE_BRANDING={{ eucalyptus_console_product | quote }}
 CONSOLE_CERTBOT="{{ 'yes' if eucalyptus_console_certbot_enable else 'no' }}"
-CONSOLE_IMAGEID="{{ eucalyptus_console_image_id | quote }}"
-CONSOLE_INSTANCETYPE="{{ eucalyptus_console_instance_type | quote }}"
-CONSOLE_UFSPORT="{{ cloud_public_port | default(8773) }}"
+CONSOLE_IMAGEID={{ eucalyptus_console_image_id | quote }}
+CONSOLE_INSTANCETYPE={{ eucalyptus_console_instance_type | quote }}
+CONSOLE_UFSPORT={{ cloud_public_port | default(8773) }}
 CONSOLE_SERVERCERTID=""
 CONSOLE_SSHKEY=""
-CONSOLE_SSHCIDR="{{ eucalyptus_console_ssh_cidr | quote }}"
-CONSOLE_WEBCIDR="{{ eucalyptus_console_web_cidr | quote }}"
+CONSOLE_SSHCIDR={{ eucalyptus_console_ssh_cidr | quote }}
+CONSOLE_WEBCIDR={{ eucalyptus_console_web_cidr | quote }}
