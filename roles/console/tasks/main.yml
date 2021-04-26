@@ -84,7 +84,7 @@
     eval $(clcadmin-assume-system-credentials)
     euform-describe-stacks eucalyptus-dns | grep CREATE_COMPLETE
   delegate_to: "{{ groups.cloud[0] }}"
-  when: shell_result.changed
+  when: (eucalyptus_console_cname is defined or eucalyptus_console_ipv4 is defined) and shell_result.changed
   register: shell_result
   changed_when: False
   until: shell_result is succeeded
