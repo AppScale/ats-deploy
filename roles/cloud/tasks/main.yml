@@ -196,10 +196,10 @@
     eval $(clcadmin-assume-system-credentials)
     SERVICES_PORT_OLD="$(euctl -n bootstrap.webservices.port)"
     SERVICES_CIDR_OLD="$(euctl -n bootstrap.webservices.listener_address_match)"
-    SERVICES_PORT_NEW="{{ cloud_listener_port | quote }}"
-    SERVICES_CIDR_NEW="{{ cloud_listener_cidr | quote }}"
-    euctl system.dns.dnsdomain="{{ cloud_system_dns_dnsdomain | quote }}"
-    euctl region.region_name="{{ cloud_region_region_name | quote }}"
+    SERVICES_PORT_NEW={{ cloud_listener_port | quote }}
+    SERVICES_CIDR_NEW={{ cloud_listener_cidr | quote }}
+    euctl system.dns.dnsdomain={{ cloud_system_dns_dnsdomain | quote }}
+    euctl region.region_name={{ cloud_region_region_name | quote }}
     euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
     euctl bootstrap.webservices.use_instance_dns=true
     euctl bootstrap.webservices.use_dns_delegation=true
@@ -226,9 +226,9 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    euctl objectstorage.s3provider.s3endpoint="{{ eucalyptus_minio_endpoint | quote }}"
-    euctl objectstorage.s3provider.s3accesskey="{{ eucalyptus_minio_creds.access_key | quote }}"
-    euctl objectstorage.s3provider.s3secretkey="{{ eucalyptus_minio_creds.secret_key | quote }}"
+    euctl objectstorage.s3provider.s3endpoint={{ eucalyptus_minio_endpoint | quote }}
+    euctl objectstorage.s3provider.s3accesskey={{ eucalyptus_minio_creds.access_key | quote }}
+    euctl objectstorage.s3provider.s3secretkey={{ eucalyptus_minio_creds.secret_key | quote }}
     euctl objectstorage.s3provider.s3endpointheadresponse=400
     euctl objectstorage.providerclient=minio
   when: eucalyptus_ceph_conf is undefined and eucalyptus_minio_endpoint is defined
@@ -240,9 +240,9 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    euctl objectstorage.s3provider.s3endpoint="{{ eucalyptus_ceph_rgw_endpoint | quote }}"
-    euctl objectstorage.s3provider.s3accesskey="{{ eucalyptus_ceph_rgw_creds.access_key | quote }}"
-    euctl objectstorage.s3provider.s3secretkey="{{ eucalyptus_ceph_rgw_creds.secret_key | quote }}"
+    euctl objectstorage.s3provider.s3endpoint={{ eucalyptus_ceph_rgw_endpoint | quote }}
+    euctl objectstorage.s3provider.s3accesskey={{ eucalyptus_ceph_rgw_creds.access_key | quote }}
+    euctl objectstorage.s3provider.s3secretkey={{ eucalyptus_ceph_rgw_creds.secret_key | quote }}
     euctl objectstorage.s3provider.s3endpointheadresponse=200
     euctl objectstorage.providerclient=ceph-rgw
   when: eucalyptus_ceph_conf is defined
@@ -352,7 +352,7 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    euare-accountcreate "{{ item | quote }}"
+    euare-accountcreate {{ item | quote }}
   register: shell_result
   changed_when: '"EntityAlreadyExists" not in shell_result.stderr'
   failed_when:
@@ -364,7 +364,7 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    euare-useraddloginprofile -u admin -p "{{ cloud_admin_password | quote }}"
+    euare-useraddloginprofile -u admin -p {{ cloud_admin_password | quote }}
   register: shell_result
   when: cloud_admin_password|length >= 8
   changed_when: '"EntityAlreadyExists" not in shell_result.stderr'
@@ -377,7 +377,9 @@
     set -eu
     eval $(clcadmin-assume-system-credentials)
     export AWS_DEFAULT_REGION=eucalyptus
-    euare-useraddkey --write-config --domain "{{ cloud_system_dns_dnsdomain | quote }}:{{ cloud_public_port | default(8773) }}" --set-default-user admin > /root/.euca/euca-admin.ini
+    CLOUD_DOMAIN={{ cloud_system_dns_dnsdomain | quote }}
+    CLOUD_PORT={{ cloud_public_port | default(8773) | quote }}
+    euare-useraddkey --write-config --domain "${CLOUD_DOMAIN}:${CLOUD_PORT}" --set-default-user admin > /root/.euca/euca-admin.ini
   args:
     creates: /root/.euca/euca-admin.ini
 
@@ -427,7 +429,7 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    /usr/local/bin/eucalyptus-system-images --type service --size "{{ cloud_service_image_size | quote }}"
+    /usr/local/bin/eucalyptus-system-images --type service --size {{ cloud_service_image_size | quote }}
   register: shell_result
   changed_when: '"image already installed" not in shell_result.stderr'
   failed_when:

@@ -76,7 +76,9 @@
 - name: wait for certbot firstboot certificate for eucalyptus-cloud
   shell: |
     set -eu
-    HEARTBEAT_URL="https://bootstrap.{{ cloud_system_dns_dnsdomain | quote }}:{{ cloud_public_port | default(8773) }}/services/Heartbeat"
+    HEARTBEAT_DOMAIN={{ cloud_system_dns_dnsdomain | quote }}
+    HEARTBEAT_PORT={{ cloud_public_port | default(8773) | quote }}
+    HEARTBEAT_URL="https://bootstrap.${HEARTBEAT_DOMAIN}:${HEARTBEAT_PORT}/services/Heartbeat"
     wget \
       --ca-certificate /var/lib/eucalyptus/keys/firstboot.pem \
       --quiet \

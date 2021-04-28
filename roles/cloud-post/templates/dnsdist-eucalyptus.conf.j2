@@ -2,7 +2,7 @@
 -- Eucalyptus authoritative DNS server configuration for dnsdist
 --
 
-EUCALYPTUS_DNSDOMAIN = "{{ cloud_system_dns_dnsdomain | quote }}"
+EUCALYPTUS_DNSDOMAIN = "{{ cloud_system_dns_dnsdomain }}"
 
 --
 -- Listener / access control configuration
@@ -17,9 +17,9 @@ setACL({"0.0.0.0/0", "::/0"})
 -- Static DNS responses
 --
 {% if dnsdist_console_ip|default() %}
-addAction("console." .. EUCALYPTUS_DNSDOMAIN, SpoofAction("{{ dnsdist_console_ip | quote }}"))
+addAction("console." .. EUCALYPTUS_DNSDOMAIN, SpoofAction("{{ dnsdist_console_ip }}"))
 {% elif dnsdist_console_cname|default() %}
-addAction("console." .. EUCALYPTUS_DNSDOMAIN, SpoofCNAMEAction("{{ dnsdist_console_cname | quote }}"))
+addAction("console." .. EUCALYPTUS_DNSDOMAIN, SpoofCNAMEAction("{{ dnsdist_console_cname }}"))
 {% else %}
 -- addAction("console.{{ cloud_system_dns_dnsdomain }}", SpoofAction("10.20.30.40"))
 -- addAction("cname-console.{{ cloud_system_dns_dnsdomain }}", SpoofCNAMEAction("console.{{ cloud_system_dns_dnsdomain }}"))
