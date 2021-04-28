@@ -61,6 +61,36 @@
   - http
   - https
 
+- name: certbot system domain for eucalyptus-cloud
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euform-create-stack \
+      --template-file /var/lib/eucalyptus/templates/eucalyptus-dns-template.yaml \
+      -p ConsoleCname={{ eucalyptus_console_cname | default | quote }} \
+      -p ConsoleIpAddress={{ eucalyptus_console_ipv4 | default | quote }} \
+      eucalyptus-dns
+  delegate_to: "{{ groups.cloud[0] }}"
+  when: eucalyptus_console_cname is defined or eucalyptus_console_ipv4 is defined
+  register: shell_result
+  changed_when: '"AlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"AlreadyExists" not in shell_result.stderr'
+
+- name: wait for certbot system domain for eucalyptus-cloud stack
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-assume-system-credentials)
+    euform-describe-stacks eucalyptus-dns | grep CREATE_COMPLETE
+  delegate_to: "{{ groups.cloud[0] }}"
+  when: (eucalyptus_console_cname is defined or eucalyptus_console_ipv4 is defined) and shell_result.changed
+  register: shell_result
+  changed_when: False
+  until: shell_result is succeeded
+  retries: 5
+  delay: 30
+
 - name: start eucaconsole service
   systemd:
     enabled: true
