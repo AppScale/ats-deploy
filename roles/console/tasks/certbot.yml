@@ -40,6 +40,10 @@
       ${EXTRA_OPTS}
   args:
     creates: /etc/letsencrypt/live/eucaconsole/fullchain.pem
+  register: shell_result
+  until: shell_result is succeeded
+  retries: 5
+  delay: 30
 
 - name: eucaconsole certbot https renewal
   systemd:
