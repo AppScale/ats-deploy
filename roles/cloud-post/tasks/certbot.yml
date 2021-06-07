@@ -27,14 +27,6 @@
     group: root
     mode: 0644
 
-- name: certbot eucalyptus certificate import hook
-  copy:
-    src: eucalyptus-certbot-hook
-    dest: /usr/local/bin/eucalyptus-certbot-hook
-    owner: root
-    group: root
-    mode: 0755
-
 - name: certbot route53 system domain for eucalyptus-cloud authentication
   shell: |
     set -eu

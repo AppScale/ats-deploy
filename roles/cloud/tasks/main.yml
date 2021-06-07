@@ -267,6 +267,8 @@
     owner: root
     group: root
     mode: 0755
+  tags:
+    - file
 
 - name: eucalyptus-images image install wrapper
   copy:
@@ -275,6 +277,8 @@
     owner: root
     group: root
     mode: 0755
+  tags:
+    - file
 
 - name: eucalyptus-system-images system image install utility
   copy:
@@ -283,6 +287,8 @@
     owner: root
     group: root
     mode: 0755
+  tags:
+    - file
 
 - name: eucalyptus cloud services https import utility
   copy:
@@ -291,6 +297,28 @@
     owner: root
     group: root
     mode: 0755
+  tags:
+    - file
+
+- name: certbot eucalyptus certificate import hook
+  copy:
+    src: eucalyptus-certbot-hook
+    dest: /usr/local/bin/eucalyptus-certbot-hook
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - file
+
+- name: console manage stack utility
+  copy:
+    src: console-manage-stack
+    dest: /usr/local/bin/console-manage-stack
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - file
 
 - name: cloudformation templates directory
   file:
@@ -307,6 +335,8 @@
     owner: root
     group: root
     mode: 0644
+  tags:
+    - file
 
 - name: cloudformation template for console elastic ip
   copy:
@@ -315,6 +345,8 @@
     owner: root
     group: root
     mode: 0644
+  tags:
+    - file
 
 - name: cloudformation template for console
   copy:
@@ -323,6 +355,8 @@
     owner: root
     group: root
     mode: 0644
+  tags:
+    - file
 
 - name: cloudformation template for console with custom https
   copy:
@@ -331,6 +365,8 @@
     owner: root
     group: root
     mode: 0644
+  tags:
+    - file
 
 - name: tools configuration directory
   file:
