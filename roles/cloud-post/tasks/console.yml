@@ -98,14 +98,6 @@
   set_fact:
     eucalyptus_console_image_id: "{{ shell_result.stdout }}"
 
-- name: console manage stack command
-  copy:
-    src: console-manage-stack
-    dest: /usr/local/bin/console-manage-stack
-    owner: root
-    group: root
-    mode: 0755
-
 - name: console stack configuration
   template:
     src: console.conf.j2
