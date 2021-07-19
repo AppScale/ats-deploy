@@ -11,6 +11,7 @@ cloud_properties: {}
 cloud_admin_password: ""
 cloud_service_image_rpm: yes
 cloud_service_image_size: "5"
+cloud_container_image_size: "2"
 cloud_initial_accounts_default: [ "aws", "amazon", "euca" ]
 cloud_initial_accounts_custom: []
 cloud_initial_accounts: "{{ cloud_initial_accounts_default + cloud_initial_accounts_custom }}"

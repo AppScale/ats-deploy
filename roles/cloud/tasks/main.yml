@@ -489,3 +489,32 @@
   register: shell_result
   changed_when: '"not changed" not in shell_result.stderr'
   when: not cloud_service_image_rpm
+
+- name: install container image as system image
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    /usr/local/bin/eucalyptus-system-images --type container --size {{ cloud_container_image_size | quote }}
+  register: shell_result
+  changed_when: '"image already installed" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - shell_result.rc != 2
+  when: (cloud_opts_tech_preview + cloud_opts_custom) is search(cloud_opts_tp_rds | regex_escape())
+
+- name: configure container image cloud properties and launch permissions
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-assume-system-credentials)
+    CONTAINER_IMAGEID=$(euca-describe-images --filter tag:type=eucalyptus-container-image | head -n 1 | grep ^IMAGE | cut -f 2)
+    OLD_RDS_IMAGEID=$(euctl -n services.rds.worker.image)
+    if [ "${CONTAINER_IMAGEID}" != "${OLD_RDS_IMAGEID}" ] ; then
+      RDS_ACCOUNT_NUMBER=$(euare-accountlist | grep "^(eucalyptus)rds[[:space:]]" | cut -f 2)
+      euca-modify-image-attribute -l -a "${RDS_ACCOUNT_NUMBER}" "${CONTAINER_IMAGEID}"
+      euctl services.rds.worker.image="${CONTAINER_IMAGEID}"
+    else
+      echo "Container image cloud properties not changed." >&2
+    fi
+  register: shell_result
+  changed_when: '"not changed" not in shell_result.stderr'
+  when: (cloud_opts_tech_preview + cloud_opts_custom) is search(cloud_opts_tp_rds |  regex_escape())
