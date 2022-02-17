@@ -4,8 +4,11 @@
     name:
       - dsc22
       - java-1.8.0-openjdk-headless
-      - zkdump
-      - zookeeper
+      - /root/midonet/zkdump-1.05-1.noarch.rpm
+      - /root/midonet/libzookeeper-3.4.8-4.x86_64.rpm
+      - /root/midonet/lldpd-0.9.5-2.1.x86_64.rpm
+      - /root/midonet/zookeeper-3.4.8-4.x86_64.rpm
+      - /root/midonet/python-zookeeper-3.4.8-4.x86_64.rpm
     state: present
   tags:
     - image

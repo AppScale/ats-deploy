@@ -27,7 +27,9 @@
   yum:
     name:
       - java-1.8.0-openjdk-headless
-      - midolman
+      - /root/midonet/midolman-5.2.2-1.0.el7.noarch.rpm
+      - /root/midonet/midonet-tools-5.2.2-1.0.el7.noarch.rpm
+      - /root/midonet/quagga-0.99.23-0.el7.midokura.x86_64.rpm
     state: present
   tags:
     - image
