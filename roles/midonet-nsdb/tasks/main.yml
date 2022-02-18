@@ -65,6 +65,13 @@
     regexp: '^(\s+)-\s+seeds:\s+.+$'
     replace: '\1- seeds: "{{ groups.midonet_nsdb | map("extract", hostvars, ["eucalyptus_host_cluster_ipv4"]) | list | sort | join(",") }}"'
 
+- name: cassandra add tmpdir
+  lineinfile:
+    path: /etc/cassandra/conf/cassandra-env.sh
+    line: 'JVM_OPTS="$JVM_OPTS -Djava.io.tmpdir=/var/lib/cassandra/tmp"'
+    state: present
+    backup: yes
+
 - name: start cassandra service
   systemd:
     daemon_reload: true
