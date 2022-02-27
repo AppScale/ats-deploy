@@ -62,3 +62,17 @@
     state: started
     name: dnsdist@eucalyptus
   when: cloud_dns_authoritative_balancer|default(False)
+
+- name: add T3 instances type
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euform-create-stack \
+      --template-file /usr/share/eucalyptus/doc/ec2-instance-types-general.yaml \
+      -p EnableT3=True \
+      ec2-instance-types-general
+  register: shell_result
+  changed_when: '"AlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"Stack already exists" not in shell_result.stderr'
