@@ -36,7 +36,7 @@ cloud_firewalld_cluster_interface: "{{ eucalyptus_host_cluster_interface if euca
 
 cloud_firewalld_cluster_zone: internal
 
-cloud_firewalld_default_zone: trusted
+cloud_firewalld_default_zone: public
 
 cloud_firewalld_start: yes
 

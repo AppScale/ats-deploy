@@ -192,6 +192,32 @@
   changed_when: '"NAME_CONFLICT" not in firewalld_result.stderr'
   when: cloud_firewalld_configure
 
+- name: eucalyptus firewalld midonet gateway zone services
+  firewalld:
+    zone: euca-vpcmidogw
+    service: "euca-vpcmidogw-{{ cidr_index }}"
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  loop: "{{ vpcmido_public_ip_cidrs }}"
+  loop_control:
+    index_var: cidr_index
+    loop_var: cidr
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and cloud_firewalld_vpcmidogw_zone is not none
+
+- name: eucalyptus firewalld midonet gw device to trusted zone
+  firewalld:
+    zone: trusted
+    interface: "{{ vpcmido_gw_srv_veth0 }}"
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure
+
 - name: firewalld reload
   systemd:
     name: firewalld
@@ -200,20 +226,20 @@
     - firewalld
   when: cloud_firewalld_configure and firewalld_result.changed
 
-#- name: eucalyptus firewalld midonet gateway services for zone
-#  firewalld:
-#    zone: "{{ cloud_firewalld_vpcmidogw_zone }}"
-#    service: "euca-vpcmidogw-{{ cidr_index }}"
-#    state: enabled
-#    permanent: yes
-#    immediate: "{{ cloud_firewalld_start }}"
-#  loop: "{{ vpcmido_public_ip_cidrs }}"
-#  loop_control:
-#    index_var: cidr_index
-#    loop_var: cidr
-#  tags:
-#    - firewalld
-#  when: cloud_firewalld_configure and cloud_firewalld_vpcmidogw_zone is not none
+- name: eucalyptus firewalld midonet gateway services for zone
+  firewalld:
+    zone: "{{ cloud_firewalld_vpcmidogw_zone }}"
+    service: "euca-vpcmidogw-{{ cidr_index }}"
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  loop: "{{ vpcmido_public_ip_cidrs }}"
+  loop_control:
+    index_var: cidr_index
+    loop_var: cidr
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and cloud_firewalld_vpcmidogw_zone is not none
 
 - name: eucalyptus firewalld midonet gateway dedicated interface zone
   firewalld:
