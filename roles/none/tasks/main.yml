@@ -310,6 +310,37 @@
   - "minio"
   - "minio-key"
 
+- name: find the sysctl added files
+  find:
+    paths: /etc/sysctl.d/
+    file_type: file
+    patterns: '80-net-*.conf'
+    use_regex: true
+  register: netfiles
+
+- name: remove the sysctl added rules
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ netfiles.files }}"
+
+- name: remove added firewalld services and zones
+  file:
+    path: "{{ item }}"
+  loop:
+  - "/etc/firewalld/zone/euca-cluster.xml"
+  - "/etc/firewalld/zone/euca-vpcmidogw.xml"
+  - "/etc/firewalld/services/euca-gre.xml"
+  - "/etc/firewalld/services/eucalyptus.xml"
+  - "/etc/firewalld/services/eucalyptus.xml"
+  - "/etc/firewalld/services/euca-vpcmidogw.xml"
+  - "/etc/firewalld/services/euca-vpcmidogw-0.xml"
+  - "/etc/firewalld/services/euca-vpcmidogw-1.xml"
+  - "/etc/firewalld/services/euca-vpcmidogw-2.xml"
+  - "/etc/firewalld/services/euca-vpcmidogw-3.xml"
+  - "/etc/firewalld/services/euca-vpcmidogw-4.xml"
+  - "/etc/firewalld/services/euca-vpcmidogw-5.xml"
+
 - name: remove minio application directory
   file:
     path: /opt/minio
