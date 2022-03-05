@@ -63,6 +63,13 @@
     name: dnsdist@eucalyptus
   when: cloud_dns_authoritative_balancer|default(False)
 
+- name: compatibility with latest awscli versions
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euctl bootstrap.webservices.unknown_parameter_handling=ignore
+  when: cloud_awscli_compatibility
+
 - name: add T3 instances type
   shell: |
     set -eu
