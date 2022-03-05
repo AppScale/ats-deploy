@@ -55,6 +55,15 @@
     chdir: /home/ceph-deploy/cluster
     cmd: "ceph-deploy {{ ceph_deploy_opts }} admin {{ groups['ceph'] | union(groups['ceph_object_gateway']) | map('extract', hostvars, ['ansible_hostname']) | list | sort | join(' ') }}"
 
+- name: fix mgr directory permissions
+  file:
+    path: "/var/lib/ceph/mgr/{{ ansible_hostname }}"
+    state: directory
+    owner: ceph
+    group: ceph
+    mode: 0750
+  when: ceph_mgr_create
+
 - name: create manager
   command:
     chdir: /home/ceph-deploy/cluster
