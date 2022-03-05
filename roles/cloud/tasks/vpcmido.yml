@@ -3,11 +3,11 @@
   yum:
     name:
       - java-1.8.0-openjdk-headless
-      - /root/midonet/midolman-5.2.2-1.0.el7.noarch.rpm
-      - /root/midonet/midonet-cluster-5.2.2-1.0.el7.noarch.rpm
-      - /root/midonet/midonet-tools-5.2.2-1.0.el7.noarch.rpm
-      - /root/midonet/python-midonetclient-5.2.2-1.0.el7.noarch.rpm
-      - /root/midonet/quagga-0.99.23-0.el7.midokura.x86_64.rpm
+      - "{{ eucalyptus_local_midonet_dir }}/midolman-5.2.2-1.0.el7.noarch.rpm"
+      - "{{ eucalyptus_local_midonet_dir }}/midonet-cluster-5.2.2-1.0.el7.noarch.rpm"
+      - "{{ eucalyptus_local_midonet_dir }}/midonet-tools-5.2.2-1.0.el7.noarch.rpm"
+      - "{{ eucalyptus_local_midonet_dir }}/python-midonetclient-5.2.2-1.0.el7.noarch.rpm"
+      - "{{ eucalyptus_local_midonet_dir }}/quagga-0.99.23-0.el7.midokura.x86_64.rpm"
       - python-webob
     state: present
   tags:
