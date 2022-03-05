@@ -1,0 +1,63 @@
+---
+- name: create local directory for midonet (and dependencies) RPMs
+  file:
+    path: "{{ eucalyptus_local_midonet_dir }}"
+    state: directory
+    mode: 0755
+    owner: root
+  become: no
+  when: eucalyptus_get_midonet
+  tags:
+  - midonet-packages
+
+- name: downloads midonet RPMs
+  get_url:
+    url: "{{ eucalyptus_midonet_prefix_url }}/midonet/noarch/{{ item }}"
+    dest: "{{ eucalyptus_local_midonet_dir }}/{{ item }}"
+    mode: '0440'
+  loop:
+  - midolman-5.2.2-1.0.el7.noarch.rpm
+  - midonet-cluster-5.2.2-1.0.el7.noarch.rpm
+  - midonet-tools-5.2.2-1.0.el7.noarch.rpm
+  - python-midonetclient-5.2.2-1.0.el7.noarch.rpm
+  run_once: true
+  when: eucalyptus_get_midonet
+  tags:
+  - midonet-packages
+
+- name: downloads midonet-misc (noarch) RPMs
+  get_url:
+    url: "{{ eucalyptus_midonet_prefix_url }}/midonet-misc/noarch/{{ item }}"
+    dest: "{{ eucalyptus_local_midonet_dir }}/{{ item }}"
+    mode: '0440'
+  loop:
+  - midonet-selinux-1.0-2.el7.centos.noarch.rpm
+  - zkdump-1.05-1.noarch.rpm
+  run_once: true
+  when: eucalyptus_get_midonet
+  tags:
+  - midonet-packages
+
+- name: downloads midonet-misc (x86_64) RPMs
+  get_url:
+    url: "{{ eucalyptus_midonet_prefix_url }}/midonet-misc/x86_64/{{ item }}"
+    dest: "{{ eucalyptus_local_midonet_dir }}/{{ item }}"
+    mode: '0440'
+  loop:
+  - libzookeeper-3.4.8-4.x86_64.rpm
+  - libzookeeper-devel-3.4.8-4.x86_64.rpm
+  - lldpd-0.9.5-2.1.x86_64.rpm
+  - lldpd-debuginfo-0.9.5-2.1.x86_64.rpm
+  - lldpd-devel-0.9.5-2.1.x86_64.rpm
+  - python-zookeeper-3.4.8-4.x86_64.rpm
+  - quagga-0.99.23-0.el7.midokura.x86_64.rpm
+  - zkpython-3.4.5-2.x86_64.rpm
+  - zookeeper-3.4.8-4.x86_64.rpm
+  - zookeeper-debuginfo-3.4.8-4.x86_64.rpm
+  - zookeeper-lib-3.4.5-1.x86_64.rpm
+  run_once: true
+  when: eucalyptus_get_midonet
+  tags:
+  - midonet-packages
+
+

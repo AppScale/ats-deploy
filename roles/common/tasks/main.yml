@@ -10,6 +10,11 @@
     - packages
   when: net_mode == "VPCMIDO"
 
+- import_tasks: download_midonet.yml
+  tags:
+    - midonet-packages
+  when: net_mode == "VPCMIDO"
+
 - import_tasks: host_facts.yml
 
 - import_tasks: base_packages.yml
