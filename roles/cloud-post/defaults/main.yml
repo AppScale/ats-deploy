@@ -11,6 +11,10 @@ eucalyptus_console_instance_type: t2.small
 eucalyptus_console_certbot_enable: no
 eucalyptus_console_product: "{{ eucalyptus_product|default('eucalyptus') }}"
 
+# Eucalyptus monitoring
+eucalyptus_monitoring_enable: no
+eucalyptus_monitoring_account: cloud-monitoring
+
 # Certbot for eucalyptus-cloud
 eucalyptus_services_certbot_enable: no
 eucalyptus_services_certbot_email: ""

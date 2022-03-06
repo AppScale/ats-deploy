@@ -1,0 +1,17 @@
+{
+  "agent": {
+    "metrics_collection_interval": 60,
+    "logfile": "",
+    "region": "onprem"
+  },
+  "metrics": {
+    "namespace": "{{ eucalyptus_monitoring_cloudwatch_namespace | quote }}",
+    "metrics_collected": {
+      "collectd": { 
+        "collectd_security_level": "none",
+        "metrics_aggregation_interval": 0,
+        "name_prefix": "cloud_"
+      }      
+    }
+  }
+}

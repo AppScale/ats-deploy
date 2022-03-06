@@ -1,0 +1,101 @@
+---
+- name: install amazon-cloudwatch-agent package
+  yum:
+    name: "{{ eucalyptus_monitoring_cloudwatch_agent_rpm }}"
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: install collectd package
+  yum:
+    name: collectd
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: amazon-cloudwatch-agent environment
+  slurp:
+    path: /etc/eucalyptus/amazon-cloudwatch-agent.env
+  delegate_to: "{{ groups.cloud[0] }}"
+  register: slurp_result
+
+- name: set amazon-cloudwatch-agent environment fact
+  set_fact: "eucalyptus_monitoring_cloudwatch_agent_env='{{ slurp_result.content | b64decode }}'"
+
+- name: collectd agent interface configuration
+  template:
+    src: monitoring-amazon-cloudwatch-agent-interface.conf.j2
+    dest: /etc/collectd.d/amazon-cloudwatch-agent-interface.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: collectd agent configuration
+  copy:
+    src: monitoring-amazon-cloudwatch-agent.conf
+    dest: /etc/collectd.d/amazon-cloudwatch-agent.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: amazon-cloudwatch-agent environment
+  copy:
+    dest: /etc/eucalyptus/amazon-cloudwatch-agent.env
+    owner: root
+    group: root
+    mode: 0644
+    content: "{{ eucalyptus_monitoring_cloudwatch_agent_env }}"
+
+- name: amazon-cloudwatch-agent service.d directory
+  file:
+    path: /etc/systemd/system/amazon-cloudwatch-agent.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: amazon-cloudwatch-agent systemd override
+  copy:
+    src: monitoring-systemd-amazon-cloudwatch-agent-override.conf
+    dest: /etc/systemd/system/amazon-cloudwatch-agent.service.d/override.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: amazon-cloudwatch-agent common configuration
+  copy:
+    src: monitoring-amazon-cloudwatch-agent-common-config.toml
+    dest: /opt/aws/amazon-cloudwatch-agent/etc/common-config.toml
+    owner: root
+    group: root
+    mode: 0644
+
+- name: amazon-cloudwatch-agent monitoring endpoint configuration
+  template:
+    src: monitoring-amazon-cloudwatch-agent-endpoint.conf.j2
+    dest: /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.d/endpoint.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: amazon-cloudwatch-agent monitoring endpoint configuration
+  template:
+    src: monitoring-amazon-cloudwatch-agent.json.j2
+    dest: /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+    owner: root
+    group: root
+    mode: 0644
+
+- name: amazon-cloudwatch-agent systemd service
+  systemd:
+    enabled: true
+    state: started
+    name: amazon-cloudwatch-agent.service
+
+- name: collectd systemd service
+  systemd:
+    enabled: true
+    state: started
+    name: collectd.service

@@ -1,0 +1,8 @@
+---
+# Eucalyptus monitoring
+eucalyptus_monitoring_enable: no
+eucalyptus_monitoring_cloudwatch_agent_rpm: "https://s3.amazonaws.com/amazoncloudwatch-agent/centos/amd64/latest/amazon-cloudwatch-agent.rpm"
+eucalyptus_monitoring_cloudwatch_endpoint: "http://monitoring.{{ cloud_system_dns_dnsdomain | quote }}:{{ cloud_public_port | default(8773) }}"
+eucalyptus_monitoring_cloudwatch_namespace: Cloud
+eucalyptus_monitoring_interface_names: "{{ [ cloud_firewalld_public_interface|default(ansible_default_ipv4.interface), cloud_firewalld_cluster_interface ] | select('defined') | list }}"
+

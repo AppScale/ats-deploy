@@ -1,0 +1,69 @@
+#!/bin/bash
+set -euo pipefail
+
+# Process arguments
+EMR_ACTION=""
+while (( "$#" )); do
+  EMR_ARG="$1"
+  case "${EMR_ARG}" in
+    -a|--action)
+      shift
+      EMR_ACTION="$1"
+      ;;
+    -d|--debug)
+      set -x
+      ;;
+    *)
+      echo -e "Usage:\n\n\teucalyptus-monitoring-report [-h] [-a {hosts,summary}]\n"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+# Configuration
+MONITORING_ACCOUNT="cloud-monitoring"
+MONITORING_NAMESPACE="Cloud"
+MONITORING_METRICS=""
+MONITORING_SUMMARY_STATISTICS="Average,Minimum,Maximum"
+MONITORING_SUMMARY_PERIOD="900"
+
+# Source configuration
+if [ -f "/etc/eucalyptus/monitoring.conf" ] ; then
+  . "/etc/eucalyptus/monitoring.conf"
+fi
+
+# Verify running as monitoring or can impersonate monitoring account
+if [ "$(euare-accountlist 2>&1 | cut -f 1)" != "${MONITORING_ACCOUNT}" ] ; then
+  eval $(clcadmin-impersonate-user -a "${MONITORING_ACCOUNT}")
+fi
+
+if [ "${EMR_ACTION}" = "hosts" ] ; then
+  euwatch-list-metrics --namespace "${MONITORING_NAMESPACE}" | cut -f 3 | grep -oP '(?<=host=)[a-zA-Z0-9.-]+(?=[,}])' | sort -u
+elif  [ "${EMR_ACTION}" = "summary" ] ; then
+  if [ "${MONITORING_METRICS}" = "" ] ; then
+    MONITORING_METRICS="$(euwatch-list-metrics | cut -f 1 | sort -u)"
+  fi
+  if [ "${MONITORING_METRICS}" = "" ] ; then
+    exit 0
+  fi
+  MONITORING_DIMENSIONS_HOSTS="$(euwatch-list-metrics --namespace "${MONITORING_NAMESPACE}" | cut -f 3 | grep -oP 'host=[a-zA-Z0-9.-]+(?=[,}])' | sort -u | xargs -n 1 printf '%s,')"
+  for MONITORING_METRIC in ${MONITORING_METRICS}; do
+    echo -e "\nMETRIC\t${MONITORING_METRIC}"
+    MONITORING_DIMENSIONS_METRICS="$(euwatch-list-metrics --namespace "${MONITORING_NAMESPACE}" --metric "${MONITORING_METRIC}" | cut -f 3 | sed 's/[{}]//g;s/host=[a-zA-Z0-9._-]*[,$]//' | sort -u)"
+    for MONITORING_DIMENSIONS_METRIC in ${MONITORING_DIMENSIONS_METRICS}; do
+      echo -e "DIMENSIONS\t${MONITORING_DIMENSIONS_METRIC}"
+      euwatch-get-stats \
+        --namespace "${MONITORING_NAMESPACE}" \
+        --statistics "${MONITORING_SUMMARY_STATISTICS}" \
+        --period "${MONITORING_SUMMARY_PERIOD}" \
+        --dimensions "${MONITORING_DIMENSIONS_HOSTS}${MONITORING_DIMENSIONS_METRIC}" "${MONITORING_METRIC}"
+    done
+  done
+elif  [ "${EMR_ACTION}" = "" ] ; then
+  echo -e "Usage:\n\n\teucalyptus-monitoring-report [-h] [-a {hosts,summary}]\n"
+  exit 1
+else
+  echo "Invalid action: ${EMR_ACTION}" >&2
+  exit 3
+fi
