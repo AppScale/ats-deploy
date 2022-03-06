@@ -20,7 +20,7 @@
 
 - name: install eucalyptus-cloud package
   yum:
-    name: eucalyptus-cloud
+    name: eucalyptus-cloud{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image
@@ -45,7 +45,7 @@
 
 - name: install eucalyptus-walrus package
   yum:
-    name: eucalyptus-walrus
+    name: eucalyptus-walrus{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image
@@ -54,7 +54,7 @@
 
 - name: install eucanetd package
   yum:
-    name: eucanetd
+    name: eucanetd{{ eucalyptus_package_suffix }}
     state: present
   tags:
     - image
@@ -143,6 +143,10 @@
   command:
     cmd: /usr/sbin/clcadmin-initialize-cloud
     creates: /var/lib/eucalyptus/keys/cloud-cert.pem
+  environment:
+    CLOUD_DB_HOST: "{{ cloud_db_host | default() }}"
+    CLOUD_DB_PORT: "{{ cloud_db_port | default() }}"
+    CLOUD_DB_PASSWORD: "{{ cloud_db_password | default() }}"
 
 - name: start eucalyptus-cloud service
   systemd:
@@ -184,7 +188,7 @@
   register: shell_result
   until: shell_result.rc == 0
   retries: 5
-  when: eucalyptus_ceph_conf is undefined
+  when: eucalyptus_ceph_conf is undefined and eucalyptus_minio_endpoint is undefined
 
 - name: configure cloud properties
   shell: |
@@ -192,10 +196,10 @@
     eval $(clcadmin-assume-system-credentials)
     SERVICES_PORT_OLD="$(euctl -n bootstrap.webservices.port)"
     SERVICES_CIDR_OLD="$(euctl -n bootstrap.webservices.listener_address_match)"
-    SERVICES_PORT_NEW="{{ cloud_listener_port | quote }}"
-    SERVICES_CIDR_NEW="{{ cloud_listener_cidr | quote }}"
-    euctl system.dns.dnsdomain="{{ cloud_system_dns_dnsdomain | quote }}"
-    euctl region.region_name="{{ cloud_region_region_name | quote }}"
+    SERVICES_PORT_NEW={{ cloud_listener_port | quote }}
+    SERVICES_CIDR_NEW={{ cloud_listener_cidr | quote }}
+    euctl system.dns.dnsdomain={{ cloud_system_dns_dnsdomain | quote }}
+    euctl region.region_name={{ cloud_region_region_name | quote }}
     euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
     euctl bootstrap.webservices.use_instance_dns=true
     euctl bootstrap.webservices.use_dns_delegation=true
@@ -213,7 +217,21 @@
     set -eu
     eval $(clcadmin-assume-system-credentials)
     euctl objectstorage.providerclient=walrus
-  when: eucalyptus_ceph_conf is undefined
+  when: eucalyptus_ceph_conf is undefined and eucalyptus_minio_endpoint is undefined
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
+
+- name: configure cloud storage properties for minio
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euctl objectstorage.s3provider.s3endpoint={{ eucalyptus_minio_endpoint | quote }}
+    euctl objectstorage.s3provider.s3accesskey={{ eucalyptus_minio_creds.access_key | quote }}
+    euctl objectstorage.s3provider.s3secretkey={{ eucalyptus_minio_creds.secret_key | quote }}
+    euctl objectstorage.s3provider.s3endpointheadresponse=400
+    euctl objectstorage.providerclient=minio
+  when: eucalyptus_ceph_conf is undefined and eucalyptus_minio_endpoint is defined
   register: shell_result
   until: shell_result.rc == 0
   retries: 5
@@ -242,6 +260,16 @@
   until: shell_result.rc == 0
   retries: 5
 
+- name: eucalyptus-account account resources utility
+  copy:
+    src: eucalyptus-account
+    dest: /usr/local/bin/eucalyptus-account
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - file
+
 - name: eucalyptus-images image install wrapper
   copy:
     src: eucalyptus-images
@@ -249,6 +277,8 @@
     owner: root
     group: root
     mode: 0755
+  tags:
+    - file
 
 - name: eucalyptus-system-images system image install utility
   copy:
@@ -257,6 +287,8 @@
     owner: root
     group: root
     mode: 0755
+  tags:
+    - file
 
 - name: eucalyptus cloud services https import utility
   copy:
@@ -265,6 +297,28 @@
     owner: root
     group: root
     mode: 0755
+  tags:
+    - file
+
+- name: certbot eucalyptus certificate import hook
+  copy:
+    src: eucalyptus-certbot-hook
+    dest: /usr/local/bin/eucalyptus-certbot-hook
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - file
+
+- name: console manage stack utility
+  copy:
+    src: console-manage-stack
+    dest: /usr/local/bin/console-manage-stack
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - file
 
 - name: cloudformation templates directory
   file:
@@ -281,6 +335,8 @@
     owner: root
     group: root
     mode: 0644
+  tags:
+    - file
 
 - name: cloudformation template for monitoring
   copy:
@@ -297,6 +353,8 @@
     owner: root
     group: root
     mode: 0644
+  tags:
+    - file
 
 - name: cloudformation template for console
   copy:
@@ -305,6 +363,18 @@
     owner: root
     group: root
     mode: 0644
+  tags:
+    - file
+
+- name: cloudformation template for console with custom https
+  copy:
+    src: console-elb-template.yaml
+    dest: /var/lib/eucalyptus/templates/console-elb-template.yaml
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - file
 
 - name: tools configuration directory
   file:
@@ -322,11 +392,23 @@
     group: root
     mode: 0644
 
+- name: create initial accounts
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euare-accountcreate {{ item | quote }}
+  register: shell_result
+  changed_when: '"EntityAlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"EntityAlreadyExists" not in shell_result.stderr'
+  with_items: "{{ cloud_initial_accounts | default([]) }}"
+
 - name: admin password/login profile credential
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    euare-useraddloginprofile -u admin -p "{{ cloud_admin_password | quote }}"
+    euare-useraddloginprofile -u admin -p {{ cloud_admin_password | quote }}
   register: shell_result
   when: cloud_admin_password|length >= 8
   changed_when: '"EntityAlreadyExists" not in shell_result.stderr'
@@ -339,7 +421,9 @@
     set -eu
     eval $(clcadmin-assume-system-credentials)
     export AWS_DEFAULT_REGION=eucalyptus
-    euare-useraddkey --write-config --domain "{{ cloud_system_dns_dnsdomain | quote }}:{{ cloud_public_port | default(8773) }}" --set-default-user admin > /root/.euca/euca-admin.ini
+    CLOUD_DOMAIN={{ cloud_system_dns_dnsdomain | quote }}
+    CLOUD_PORT={{ cloud_public_port | default(8773) | quote }}
+    euare-useraddkey --write-config --domain "${CLOUD_DOMAIN}:${CLOUD_PORT}" --set-default-user admin > /root/.euca/euca-admin.ini
   args:
     creates: /root/.euca/euca-admin.ini
 
@@ -389,7 +473,7 @@
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
-    /usr/local/bin/eucalyptus-system-images --type service --size "{{ cloud_service_image_size | quote }}"
+    /usr/local/bin/eucalyptus-system-images --type service --size {{ cloud_service_image_size | quote }}
   register: shell_result
   changed_when: '"image already installed" not in shell_result.stderr'
   failed_when:
@@ -413,3 +497,32 @@
   register: shell_result
   changed_when: '"not changed" not in shell_result.stderr'
   when: not cloud_service_image_rpm
+
+- name: install container image as system image
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    /usr/local/bin/eucalyptus-system-images --type container --size {{ cloud_container_image_size | quote }}
+  register: shell_result
+  changed_when: '"image already installed" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - shell_result.rc != 2
+  when: (cloud_opts_tech_preview + cloud_opts_custom) is search(cloud_opts_tp_rds | regex_escape())
+
+- name: configure container image cloud properties and launch permissions
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-assume-system-credentials)
+    CONTAINER_IMAGEID=$(euca-describe-images --filter tag:type=eucalyptus-container-image | head -n 1 | grep ^IMAGE | cut -f 2)
+    OLD_RDS_IMAGEID=$(euctl -n services.rds.worker.image)
+    if [ "${CONTAINER_IMAGEID}" != "${OLD_RDS_IMAGEID}" ] ; then
+      RDS_ACCOUNT_NUMBER=$(euare-accountlist | grep "^(eucalyptus)rds[[:space:]]" | cut -f 2)
+      euca-modify-image-attribute -l -a "${RDS_ACCOUNT_NUMBER}" "${CONTAINER_IMAGEID}"
+      euctl services.rds.worker.image="${CONTAINER_IMAGEID}"
+    else
+      echo "Container image cloud properties not changed." >&2
+    fi
+  register: shell_result
+  changed_when: '"not changed" not in shell_result.stderr'
+  when: (cloud_opts_tech_preview + cloud_opts_custom) is search(cloud_opts_tp_rds |  regex_escape())

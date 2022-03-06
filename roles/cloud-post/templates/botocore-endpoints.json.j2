@@ -5,7 +5,7 @@
       "protocols" : [ "https" ],
       "signatureVersions" : [ "v4" ]
     },
-    "dnsSuffix" : "{{ cloud_system_dns_dnsdomain | quote }}:{{ cloud_public_port | default(8773) }}",
+    "dnsSuffix" : "{{ cloud_system_dns_dnsdomain }}:{{ cloud_public_port | default(8773) }}",
     "partition" : "aws",
     "partitionName" : "AWS Standard",
     "regionRegex" : "^(us|eu|ap|sa|ca|me|af)\\-\\w+\\-\\d+$",

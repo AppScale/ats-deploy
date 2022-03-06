@@ -48,7 +48,9 @@ CONSOLE_CERTBOT="${CONSOLE_CERTBOT:-no}"
 CONSOLE_EIPALLOCID="${CONSOLE_EIPALLOCID:-}"
 CONSOLE_IMAGEID="${CONSOLE_IMAGEID:-}"
 CONSOLE_INSTANCETYPE="${CONSOLE_INSTANCETYPE:-t2.small}"
+CONSOLE_SERVERCERTID="${CONSOLE_SERVERCERTID:-}"
 CONSOLE_SSHCIDR="${CONSOLE_SSHCIDR:-127.0.0.1/32}"
+CONSOLE_SSHKEY="${CONSOLE_SSHKEY:-}"
 CONSOLE_SUBNETID="${CONSOLE_SUBNETID:-}"
 CONSOLE_UFSPORT="${CONSOLE_UFSPORT:-8773}"
 CONSOLE_VPCID="${CONSOLE_VPCID:-}"
@@ -76,26 +78,35 @@ fi
 
 if [ "${CMS_ACTION}" = "check" ] ; then
   if ! euform-describe-stacks "console" | grep "^STACK" ; then
-    echo "STACK\tconsole\tNOT_FOUND"
+    echo -e "STACK\tconsole\tNOT_FOUND"
   fi
 elif  [ "${CMS_ACTION}" = "create" ] ; then
   if [ -z "${CONSOLE_EIPALLOCID}" ] || [ -z "${CONSOLE_SUBNETID}" ] || [ -z "${CONSOLE_VPCID}" ] ; then
     exit 1
   fi
 
+  CONSOLE_TEMPLATE="/var/lib/eucalyptus/templates/console-template.yaml"
+  if [ -n "${CONSOLE_SERVERCERTID}" ] ; then
+    CONSOLE_TEMPLATE="/var/lib/eucalyptus/templates/console-elb-template.yaml"
+    CONSOLE_TEMPLATE_PARAMS="-p ServerCertificateId=${CONSOLE_SERVERCERTID}"
+  else
+    CONSOLE_TEMPLATE_PARAMS="-p EnableCertbot=${CONSOLE_CERTBOT}"
+  fi
+
   euform-create-stack \
-    --template-file "/var/lib/eucalyptus/templates/console-template.yaml" \
+    --template-file "${CONSOLE_TEMPLATE}" \
     --capabilities "CAPABILITY_IAM" \
     -p ElasticIpAllocationId="${CONSOLE_EIPALLOCID}" \
-    -p EnableCertbot="${CONSOLE_CERTBOT}" \
     -p Branding="${CONSOLE_BRANDING}" \
     -p UfsPort="${CONSOLE_UFSPORT}" \
     -p InstanceType="${CONSOLE_INSTANCETYPE}" \
     -p ImageId="${CONSOLE_IMAGEID}" \
     -p SubnetId="${CONSOLE_SUBNETID}" \
     -p VpcId="${CONSOLE_VPCID}" \
+    -p KeyName="${CONSOLE_SSHKEY}" \
     -p SshCidr="${CONSOLE_SSHCIDR}" \
     -p ConsoleCidr="${CONSOLE_WEBCIDR}" \
+    ${CONSOLE_TEMPLATE_PARAMS} \
     "console"
 elif  [ "${CMS_ACTION}" = "delete" ] ; then
   euform-delete-stack "console"

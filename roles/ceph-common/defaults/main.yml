@@ -7,9 +7,14 @@ ceph_cluster_network: "{{ ceph_public_network }}"
 
 ceph_osd_data_path: /var/lib/ceph-osd/osd0
 
+ceph_osd_data_paths:
+  - "{{ ceph_osd_data_path }}"
+
 ceph_osd_volume_pool: eucavolumes
 
 ceph_osd_snapshot_pool: eucasnapshots
+
+ceph_osd_pool_pgnum: 16
 
 ceph_rgw_uid: eucas3
 
@@ -17,7 +22,7 @@ ceph_facts: "{{ True if (ceph_facts_local or ('ceph' in groups and groups['ceph'
 
 ceph_facts_local: no
 
-ceph_facts_delegate: "{{ 'localhost' if ceph_facts_local else None }}"
+ceph_facts_delegate: "{{ 'localhost' if ceph_facts_local else '' }}"
 
 ceph_facts_path: /root/eucalyptus/ceph
 
@@ -25,14 +30,16 @@ cloud_firewalld_configure: no
 
 cloud_firewalld_cluster_cidr: Null
 
-cloud_firewalld_public_interface: "{{ ansible_default_ipv4.interface }}"
+cloud_firewalld_public_interface: "{{ eucalyptus_host_public_interface }}"
 
 cloud_firewalld_public_zone: public
 
-cloud_firewalld_cluster_interface: Null
+cloud_firewalld_cluster_interface: "{{ eucalyptus_host_cluster_interface if eucalyptus_host_public_interface != eucalyptus_host_cluster_interface else None|default(omit, True) }}"
 
 cloud_firewalld_cluster_zone: internal
 
 cloud_firewalld_default_zone: trusted
 
 cloud_firewalld_start: yes
+
+cloud_firewalld_always_reload: no

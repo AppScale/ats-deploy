@@ -1,0 +1,3 @@
+MINIO_BROWSER=off
+MINIO_OPTS=--address {{ eucalyptus_host_cluster_ipv4 }}:{{ minio_port }} --config-dir /opt/minio/etc --certs-dir /opt/minio/etc/certs
+MINIO_VOLUMES={% for minio in groups.minio %}http://{{ hostvars[minio].eucalyptus_host_cluster_ipv4 }}:{{ minio_port }}{{ minio_data_path }}{1...4} {% endfor %}

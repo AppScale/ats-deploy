@@ -137,6 +137,14 @@
     group: root
     mode: 0644
 
+- name: eucanetd filesystem namespace configuration drop-in
+  copy:
+    src: eucanetd-no-mount-ns.conf
+    dest: /etc/systemd/system/eucanetd.service.d/eucanetd-no-mount-ns.conf
+    owner: root
+    group: root
+    mode: 0644
+
 - name: systemd daemon reload
   systemd:
     daemon_reload: true
@@ -151,10 +159,14 @@
 - name: eucalyptus firewalld midonet gateway service
   template:
     src: firewalld-service-euca-vpcmidogw.xml.j2
-    dest: /etc/firewalld/services/euca-vpcmidogw.xml
+    dest: "/etc/firewalld/services/euca-vpcmidogw-{{ cidr_index }}.xml"
     owner: root
     group: root
     mode: 0644
+  loop: "{{ vpcmido_public_ip_cidrs }}"
+  loop_control:
+    index_var: cidr_index
+    loop_var: cidr
   tags:
     - firewalld
 
@@ -186,13 +198,17 @@
     - firewalld
   when: cloud_firewalld_configure and firewalld_result.changed
 
-- name: eucalyptus firewalld midonet gateway service for zone
+- name: eucalyptus firewalld midonet gateway services for zone
   firewalld:
     zone: "{{ cloud_firewalld_vpcmidogw_zone }}"
-    service: euca-vpcmidogw
+    service: "euca-vpcmidogw-{{ cidr_index }}"
     state: enabled
     permanent: yes
     immediate: "{{ cloud_firewalld_start }}"
+  loop: "{{ vpcmido_public_ip_cidrs }}"
+  loop_control:
+    index_var: cidr_index
+    loop_var: cidr
   tags:
     - firewalld
   when: cloud_firewalld_configure and cloud_firewalld_vpcmidogw_zone is not none

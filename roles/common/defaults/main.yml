@@ -1,12 +1,15 @@
 ---
 # Eucalyptus package repositories
 eucalyptus_yum_baseurl_master: http://downloads.eucalyptus.cloud/software/eucalyptus/master/rhel/7/x86_64/
+eucalyptus_yum_baseurl_release: http://downloads.eucalyptus.cloud/software/eucalyptus/5/rhel/7/x86_64/
 eucalyptus_yum_baseurl_snapshot: http://downloads.eucalyptus.cloud/software/eucalyptus/snapshot/5/rhel/7/x86_64/
-eucalyptus_yum_baseurl: "{{ eucalyptus_yum_baseurl_snapshot }}"
+eucalyptus_yum_baseurl: "{{ eucalyptus_yum_baseurl_release }}"
 euca2ools_yum_baseurl: http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/
 eucalyptus_yum_gpgcheck: "1"
 eucalyptus_base_yum_enabled: no
 eucalyptus_base_yum_baseurl: https://downloads.eucalyptus.cloud/software/eucalyptus/base/5/rhel/7/x86_64/
+eucalyptus_package_version: ""
+eucalyptus_package_suffix: "{{ '-' + eucalyptus_package_version if eucalyptus_package_version else '' }}"
 
 # Product settings
 eucalyptus_product: eucalyptus
@@ -28,9 +31,16 @@ cloud_opts_custom: ""
 cloud_opts_mem: "-Xmx2g"
 cloud_opts_bindaddr: "--bind-addr={{ eucalyptus_host_cluster_ipv4 }}"
 cloud_opts_bootstrap_hosts: ""
-cloud_opts_tech_preview: "-Denable.route53.tech.preview=true -Denable.sqs.tech.preview=true"
+cloud_opts_tech_preview: "{{ cloud_opts_tp_route53 }} {{ cloud_opts_tp_sqs }}"
+cloud_opts_tp_elbv2: "-Denable.loadbalancingv2.tech.preview=true"
+cloud_opts_tp_route53: "-Denable.route53.tech.preview=true"
+cloud_opts_tp_rds: "-Denable.rds.tech.preview=true"
+cloud_opts_tp_sqs: "-Denable.sqs.tech.preview=true"
 cloud_log_level: INFO
 cloud_boostrap_hosts: no
+cloud_db_host: Null
+cloud_db_port: Null
+cloud_db_password: Null
 cloud_instances:
   state_dir: /var/lib/eucalyptus/instances
   conf:
@@ -66,7 +76,11 @@ net_mode_:
 net_private_interface: "{{ net_mode_[net_mode_lower]['private_interface'] }}"
 net_public_interface: en1
 net_bridge_interface: "{{ net_mode_[net_mode_lower]['bridge_interface'] }}"
+net_instance_dns_servers: Null
 net_node_listen_addr: "{{ eucalyptus_host_cluster_ipv4 }}"
+net_node_metadata_ip: Null
+net_node_metadata_use_vm_private: Null
+net_node_proxy: Null
 net_node_router_enabled: "{{ edge_router_enabled }}"
 net_node_router_ip: "{{ edge_router_ip }}"
 

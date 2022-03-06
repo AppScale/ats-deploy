@@ -1,6 +1,11 @@
 # Eucalyptus cloud configuration
 LOGLEVEL="{{ cloud_log_level }}"
 CLOUD_OPTS="{{ cloud_opts }}"
+{% if cloud_db_host %}
+CLOUD_DB_HOST="{{ cloud_db_host }}"
+CLOUD_DB_PORT="{{ cloud_db_port | default() }}"
+CLOUD_DB_PASSWORD="{{ cloud_db_password }}"
+{% endif %}
 NODES="{% for node in groups.node if (inventory_hostname in groups.zone and eucalyptus_zone_name == hostvars[node]['eucalyptus_zone_name']) %}{{ hostvars[node].eucalyptus_host_cluster_ipv4 }} {% endfor %}"
 HYPERVISOR="kvm"
 INSTANCE_PATH="{{ cloud_instances_state_dir }}"
@@ -17,7 +22,16 @@ VNET_MODE="{{ net_mode }}"
 VNET_PRIVINTERFACE="{{ net_private_interface }}"
 VNET_PUBINTERFACE="{{ net_public_interface }}"
 VNET_BRIDGE="{{ net_bridge_interface }}"
+{% if net_node_metadata_use_vm_private %}
+METADATA_USE_VM_PRIVATE="{{ net_node_metadata_use_vm_private }}"
+{% endif %}
+{% if net_node_metadata_ip %}
+METADATA_IP="{{ net_node_metadata_ip }}"
+{% endif %}
 NC_ADDR="{{ net_node_listen_addr }}"
+{% if net_node_proxy %}
+NC_PROXY="{{ net_node_proxy }}"
+{% endif %}
 NC_ROUTER="{{ net_node_router_enabled }}"
 NC_ROUTER_IP="{{ net_node_router_ip }}"
 {{ cloud_instances_conf_custom }}

@@ -104,6 +104,14 @@
   register: systemd_result
   failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
+- name: stop minio service
+  systemd:
+    enabled: false
+    state: stopped
+    name: minio
+  register: systemd_result
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
+
 - name: remove eucalyptus and dependency packages
   yum:
     name:
@@ -183,6 +191,7 @@
   - "eucanetd.service.d"
   - "midolman.service.d"
   - "midonet-cluster.service.d"
+  - "minio.service"
   - "zookeeper.service.d"
 
 - name: remove eucaconsole configuration directory
@@ -322,6 +331,24 @@
 - name: remove ceph-deploy user conf file
   file:
     path: /home/ceph-deploy/.cephdeploy.conf
+    state: absent
+
+- name: remove minio configuration
+  file:
+    path: "/etc/sysconfig/{{ item }}"
+    state: absent
+  loop:
+  - "minio"
+  - "minio-key"
+
+- name: remove minio application directory
+  file:
+    path: /opt/minio
+    state: absent
+
+- name: remove minio data directory
+  file:
+    path: /var/lib/minio
     state: absent
 
 - name: remove tools configuration directory

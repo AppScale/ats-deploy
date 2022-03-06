@@ -1,3 +1,14 @@
+---
+- name: enable epel yum repository
+  yum:
+    name: epel-release
+    state: latest
+
+- name: install epel gpg key
+  rpm_key:
+    state: present
+    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
+
 # nautilus (14.2.6) ceph-deploy fails unless python-setuptools is present
 - name: install ceph base packages
   yum:
@@ -36,7 +47,7 @@
   authorized_key:
     user: ceph-deploy
     state: present
-    key_options: 'no-port-forwarding,from="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"'
+    key_options: 'no-port-forwarding,from="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,{{ cloud_firewalld_cluster_cidr | default(eucalyptus_host_cluster_ipv4) }}"'
     key: "{{ eucalyptus_ceph_deploy_ssh_public_key }}"
 
 - name: ceph-deploy user ssh public key

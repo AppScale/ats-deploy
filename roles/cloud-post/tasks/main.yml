@@ -1,4 +1,14 @@
 ---
+- name: firewalld reload
+  systemd:
+    name: firewalld
+    state: reloaded
+  tags:
+    - firewalld
+  when:
+  - cloud_firewalld_configure | default(False)
+  - cloud_firewalld_always_reload | default(False)
+
 - import_tasks: vpcmido.yml
   when: net_mode == "VPCMIDO"
 

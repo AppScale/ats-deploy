@@ -3,3 +3,23 @@
   set_fact:
     eucalyptus_host_cluster_ipv4: "{{ host_cluster_ipv4 | default(ansible_default_ipv4.address) }}"
     eucalyptus_host_public_ipv4: "{{ host_public_ipv4 | default(ansible_default_ipv4.address) }}"
+
+- name: set host cluster interface fact
+  set_fact:
+    eucalyptus_host_cluster_interface: "{{ host_cluster_interface }}"
+  when: host_cluster_interface is defined
+
+- name: set host cluster interface by address fact
+  set_fact: "eucalyptus_host_cluster_interface={{ item }}"
+  when: host_cluster_interface is undefined and hostvars[inventory_hostname]['ansible_' + item].ipv4 is defined and hostvars[inventory_hostname]['ansible_' + item].ipv4.address == eucalyptus_host_cluster_ipv4
+  with_items: "{{ ansible_interfaces }}"
+
+- name: set host public interface fact
+  set_fact:
+    eucalyptus_host_public_interface: "{{ host_public_interface }}"
+  when: host_public_interface is defined
+
+- name: set host public interface by address fact
+  set_fact: "eucalyptus_host_public_interface={{ item }}"
+  when: host_public_interface is undefined and hostvars[inventory_hostname]['ansible_' + item].ipv4 is defined and hostvars[inventory_hostname]['ansible_' + item].ipv4.address == eucalyptus_host_public_ipv4
+  with_items: "{{ ansible_interfaces }}"

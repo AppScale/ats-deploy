@@ -1,0 +1,23 @@
+[Unit]
+Description=MinIO
+Wants=network-online.target
+After=network-online.target
+AssertFileIsExecutable=/opt/minio/bin/minio
+AssertPathExists=/etc/sysconfig/minio
+
+[Service]
+WorkingDirectory=/opt/minio/
+EnvironmentFile=/etc/sysconfig/minio
+EnvironmentFile=/etc/sysconfig/minio-key
+ExecStartPre=/bin/bash -c "if [ -z \"${MINIO_VOLUMES}\" ]; then echo \"Variable MINIO_VOLUMES not set in /etc/sysconfig/minio\"; exit 1; fi"
+ExecStart=/opt/minio/bin/minio server $MINIO_OPTS $MINIO_VOLUMES
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+Restart=on-failure
+LimitNOFILE=65536
+TimeoutStopSec=infinity
+SendSIGKILL=no
+
+[Install]
+WantedBy=multi-user.target

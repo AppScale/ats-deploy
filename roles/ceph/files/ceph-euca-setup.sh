@@ -5,6 +5,7 @@ set -euo pipefail
 
 EUCA_POOL_PLACEMENT_GROUPS="${EUCA_POOL_PLACEMENT_GROUPS:-100}"
 EUCA_CEPH_ARTIFACTS_DIR="${EUCA_CEPH_ARTIFACTS_DIR:-euca-artifacts}"
+EUCA_CEPH_MIN_CLIENT="${EUCA_CEPH_MIN_CLIENT:-}"
 EUCA_CEPH_VOLUME_POOL_NAME="${EUCA_CEPH_VOLUME_POOL_NAME:-eucavolumes}"
 EUCA_CEPH_SNAPSHOT_POOL_NAME="${EUCA_CEPH_SNAPSHOT_POOL_NAME:-eucasnapshots}"
 EUCA_CEPHRGW_UID="${EUCA_CEPHRGW_UID:-eucas3}"
@@ -21,6 +22,10 @@ if [ "${EUCA_CEPH_VOLUME_POOL_NAME}" != "${EUCA_CEPH_SNAPSHOT_POOL_NAME}" ] ; th
         ceph osd pool create ${EUCA_CEPH_SNAPSHOT_POOL_NAME} ${EUCA_POOL_PLACEMENT_GROUPS}
         ceph osd pool application enable ${EUCA_CEPH_SNAPSHOT_POOL_NAME} rbd 2>/dev/null || true
     fi
+fi
+
+if [ -n "${EUCA_CEPH_MIN_CLIENT}" ] ; then
+    ceph osd set-require-min-compat-client "${EUCA_CEPH_MIN_CLIENT}"
 fi
 
 if [ ! -e "${EUCA_CEPH_ARTIFACTS_DIR}" ] ; then

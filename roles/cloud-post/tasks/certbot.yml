@@ -68,7 +68,9 @@
 - name: wait for certbot firstboot certificate for eucalyptus-cloud
   shell: |
     set -eu
-    HEARTBEAT_URL="https://bootstrap.{{ cloud_system_dns_dnsdomain | quote }}:{{ cloud_public_port | default(8773) }}/services/Heartbeat"
+    HEARTBEAT_DOMAIN={{ cloud_system_dns_dnsdomain | quote }}
+    HEARTBEAT_PORT={{ cloud_public_port | default(8773) | quote }}
+    HEARTBEAT_URL="https://bootstrap.${HEARTBEAT_DOMAIN}:${HEARTBEAT_PORT}/services/Heartbeat"
     wget \
       --ca-certificate /var/lib/eucalyptus/keys/firstboot.pem \
       --quiet \
@@ -99,6 +101,7 @@
   shell: |
     set -eu
     SERVICE_DOMAINS="{{ eucalyptus_services_endpoints | map('regex_replace', '^(.*)$', '\1.' + cloud_system_dns_dnsdomain) | list | unique | sort | join(',') }}"
+    SERVICE_DOMAINS="${SERVICE_DOMAINS},{{ eucalyptus_services_endpoints | map('regex_replace', '^(.*)$', '\1.' + cloud_region_name + '.' + cloud_system_dns_dnsdomain) | list | unique | sort | join(',') }}"
     REGISTRATION_EMAIL={{ eucalyptus_services_certbot_email | quote }}
     EXTRA_OPTS={{ eucalyptus_services_certbot_certonly_opts | quote }}
     if [ -z "${REGISTRATION_EMAIL}" ] ; then
@@ -114,7 +117,7 @@
       --cert-name eucalyptus-cloud \
       --domain "${SERVICE_DOMAINS}" \
       --dns-route53 \
-      --deploy-hook /usr/local/bin/eucalyptus-cloud-https-import \
+      --deploy-hook /usr/local/bin/eucalyptus-certbot-hook \
       ${EXTRA_OPTS}
   args:
     creates: /etc/letsencrypt/live/eucalyptus-cloud/fullchain.pem
@@ -124,9 +127,3 @@
     enabled: true
     state: started
     name: certbot-renew.timer
-
-- name: configure cloud property for services https
-  shell: |
-    set -eu
-    eval $(clcadmin-assume-system-credentials)
-    euctl bootstrap.webservices.ssl.server_alias=eucalyptus-cloud

@@ -1,16 +1,26 @@
 Mode: {{ net_mode }}
 
 InstanceDnsServers:
+{% if net_instance_dns_servers %}
+{% for ip in net_instance_dns_servers %}
+- "{{ ip }}"
+{% endfor %}
+{% else %}
 {% for ip in (groups['cloud'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4'])) %}
 - "{{ ip }}"
 {% endfor %}
+{% endif %}
 
 PublicIps:
-- "{{ net_public_ip_range }}"
+{% for range in net_public_ip_ranges %}
+- "{{ range }}"
+{% endfor %}
 
 {% if net_mode == 'EDGE' %}
 PrivateIps:
-- "{{ net_private_ip_range }}"
+{% for range in net_private_ip_ranges %}
+- "{{ range }}"
+{% endfor %}
 
 Subnets:
 - Gateway: "{{ edge_gateway }}"
