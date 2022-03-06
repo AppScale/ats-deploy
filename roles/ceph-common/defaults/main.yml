@@ -5,10 +5,8 @@ ceph_public_network: 192.168.0.0/16
 
 ceph_cluster_network: "{{ ceph_public_network }}"
 
-ceph_osd_data_path: /var/lib/ceph-osd/osd0
-
-ceph_osd_data_paths:
-  - "{{ ceph_osd_data_path }}"
+ceph_osd_data_path:
+  - /var/lib/ceph-osd/osd0
 
 ceph_osd_volume_pool: eucavolumes
 
@@ -38,7 +36,7 @@ cloud_firewalld_cluster_interface: "{{ eucalyptus_host_cluster_interface if euca
 
 cloud_firewalld_cluster_zone: internal
 
-cloud_firewalld_default_zone: trusted
+cloud_firewalld_default_zone: public
 
 cloud_firewalld_start: yes
 

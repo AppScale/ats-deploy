@@ -63,7 +63,9 @@
 
 - name: install nginx package
   yum:
-    name: nginx
+    name:
+    - nginx
+    - nginx-mod-http-perl
     state: present
   tags:
     - image

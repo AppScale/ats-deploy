@@ -55,6 +55,15 @@
     chdir: /home/ceph-deploy/cluster
     cmd: "ceph-deploy {{ ceph_deploy_opts }} admin {{ groups['ceph'] | union(groups['ceph_object_gateway']) | map('extract', hostvars, ['ansible_hostname']) | list | sort | join(' ') }}"
 
+- name: fix mgr directory permissions
+  file:
+    path: "/var/lib/ceph/mgr/{{ ansible_hostname }}"
+    state: directory
+    owner: ceph
+    group: ceph
+    mode: 0750
+  when: ceph_mgr_create
+
 - name: create manager
   command:
     chdir: /home/ceph-deploy/cluster
@@ -64,23 +73,23 @@
 - name: create osds
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd create --data {{ item[1] }} {{ hostvars[item[0]].ansible_hostname }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd create --data {{ item[0] }} {{ hostvars[item[1]].ansible_hostname }}"
   when: ceph_osd_create
-  loop: "{{ groups.ceph | product(ceph_osd_data_paths) | list }}"
+  loop: "{{ ceph_osd_data_path | product(groups.ceph) | list }}"
 
 - name: prepare osds
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd prepare {{ hostvars[item].ansible_hostname }}:{{ ceph_osd_data_path }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd prepare {{ hostvars[item[1]].ansible_hostname }}:{{ item[0] }}"
   when: not ceph_osd_create
-  loop: "{{ groups.ceph }}"
+  loop: "{{ ceph_osd_data_path | product(groups.ceph) | list }}"
 
 - name: activate osds
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd activate {{ hostvars[item].ansible_hostname }}:{{ ceph_osd_data_path }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd activate {{ hostvars[item[1]].ansible_hostname }}:{{ item[0] }}"
   when: not ceph_osd_create
-  loop: "{{ groups.ceph }}"
+  loop: "{{ ceph_osd_data_path | product(groups.ceph) | list }}"
 
 - name: ceph-deploy rgw install hammer
   command:

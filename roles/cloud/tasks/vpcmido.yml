@@ -3,10 +3,12 @@
   yum:
     name:
       - java-1.8.0-openjdk-headless
-      - midolman
-      - midonet-cluster
-      - midonet-tools
-      - python-midonetclient
+      - "{{ eucalyptus_local_midonet_dir }}/midolman-5.2.2-1.0.el7.noarch.rpm"
+      - "{{ eucalyptus_local_midonet_dir }}/midonet-cluster-5.2.2-1.0.el7.noarch.rpm"
+      - "{{ eucalyptus_local_midonet_dir }}/midonet-tools-5.2.2-1.0.el7.noarch.rpm"
+      - "{{ eucalyptus_local_midonet_dir }}/python-midonetclient-5.2.2-1.0.el7.noarch.rpm"
+      - "{{ eucalyptus_local_midonet_dir }}/quagga-0.99.23-0.el7.midokura.x86_64.rpm"
+      - python-webob
     state: present
   tags:
     - image
@@ -190,6 +192,32 @@
   changed_when: '"NAME_CONFLICT" not in firewalld_result.stderr'
   when: cloud_firewalld_configure
 
+- name: eucalyptus firewalld midonet gateway zone services
+  firewalld:
+    zone: euca-vpcmidogw
+    service: "euca-vpcmidogw-{{ cidr_index }}"
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  loop: "{{ vpcmido_public_ip_cidrs }}"
+  loop_control:
+    index_var: cidr_index
+    loop_var: cidr
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and cloud_firewalld_vpcmidogw_zone is not none
+
+- name: eucalyptus firewalld midonet gw device to trusted zone
+  firewalld:
+    zone: trusted
+    interface: "{{ vpcmido_gw_srv_veth0 }}"
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure
+
 - name: firewalld reload
   systemd:
     name: firewalld
@@ -234,12 +262,14 @@
 
 - name: start midonet-cluster service
   systemd:
+    daemon_reload: true
     enabled: true
     state: started
     name: midonet-cluster
 
 - name: start midolman service
   systemd:
+    daemon_reload: true
     enabled: true
     state: started
     name: midolman

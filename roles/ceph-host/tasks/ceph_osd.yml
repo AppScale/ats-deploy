@@ -4,7 +4,8 @@
     path: /etc/systemd/system/ceph-osd@.service.d/
     state: directory
     mode: 0755
-  when: "'/home/' in ceph_osd_data_path"
+  when: "'/home/' in item"
+  loop: "{{ ceph_osd_data_path }}"
 
 - name: ceph-osd overrides for data under /home
   copy:
@@ -13,27 +14,30 @@
     content: |
       [Service]
       ProtectHome=false
-  when: "'/home/' in ceph_osd_data_path"
+  when: "'/home/' in item"
+  loop: "{{ ceph_osd_data_path }}"
 
 - name: directory for ceph osds
   file:
-    path: "{{ ceph_osd_data_path }}"
+    path: "{{ item }}"
     state: directory
     mode: 0755
     owner: ceph
   become: no
-  when: ceph_osd_data_path is match("/.*") and ceph_osd_data_path is not match("/dev/.*")
+  when: item is match("/.*") and item is not match("/dev/.*")
+  loop: "{{ ceph_osd_data_path }}"
 
 - name: logical volume for ceph osds
   shell: |
     set -eu
-    VGLV_PATH={{ ceph_osd_data_path | quote }}
+    VGLV_PATH={{ item | quote }}
     VG_NAME="${VGLV_PATH%%/*}"
     LV_NAME="${VGLV_PATH##*/}"
     if vgs "${VG_NAME}" && ! lvs "${VGLV_PATH}" ; then
       lvcreate --extents 100%VG --addtag eucalyptus.provisioned=yes --name "${LV_NAME}" "${VG_NAME}"
     fi
   become: no
-  when: ceph_osd_data_path is match("[a-zA-Z0-9+_.-]+/[a-zA-Z0-9+_.-]+")
+  when: item is match("[a-zA-Z0-9+_.-]+/[a-zA-Z0-9+_.-]+")
   register: shell_result
   changed_when: '"created" in shell_result.stdout'
+  loop: "{{ ceph_osd_data_path }}"
