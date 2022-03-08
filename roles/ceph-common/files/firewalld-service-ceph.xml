@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>Ceph Zone</short>
+  <description>Ports needed for a ceph network</description>
+  <port protocol="tcp" port="3300"/>
+  <port protocol="tcp" port="6789"/>
+  <port protocol="udp" port="6800-7300"/>
+  <port protocol="tcp" port="7480"/>
+</service>
