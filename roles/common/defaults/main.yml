@@ -12,7 +12,7 @@ eucalyptus_package_version: ""
 eucalyptus_package_suffix: "{{ '-' + eucalyptus_package_version if eucalyptus_package_version else '' }}"
 
 # Download midonet (no repo)
-eucalyptus_get_midonet: no
+eucalyptus_get_midonet: yes
 eucalyptus_midonet_prefix_url: https://s3.us-west-1.amazonaws.com/eucalyptus-qa.appscale.com/mirrors
 eucalyptus_local_midonet_dir: /root/midonet
 

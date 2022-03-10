@@ -100,3 +100,6 @@
 
 - import_tasks: ceph_osd.yml
   when: inventory_hostname in groups.ceph
+
+- import_tasks: ceph_firewall.yml
+  when: inventory_hostname in groups.ceph
