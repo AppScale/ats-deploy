@@ -29,36 +29,6 @@
     - firewalld
   when: cloud_firewalld_cluster_interface is not none and cloud_firewalld_cluster_zone is not none
 
-- name: firewalld ceph service
-  copy:
-    src: firewalld-service-ceph.xml
-    dest: /etc/firewalld/services/ceph.xml
-    owner: root
-    group: root
-    mode: 0644
-  tags:
-    - firewalld
-  when: cloud_firewalld_cluster_interface is not none and cloud_firewalld_cluster_zone is not none
-
-- name: firewalld reload
-  systemd:
-    name: firewalld
-    state: reloaded
-  tags:
-    - firewalld
-  when: cloud_firewalld_cluster_interface is not none and cloud_firewalld_cluster_zone is not none
-
-- name: add ceph service if needed
-  firewalld:
-    zone: "{{ cloud_firewalld_cluster_zone }}"
-    service: ceph
-    state: enabled
-    permanent: yes
-    immediate: "{{ cloud_firewalld_start }}"
-  tags:
-    - firewalld
-  when: cloud_firewalld_cluster_interface is not none and cloud_firewalld_cluster_zone is not none
-
 - name: eucalyptus gre service
   copy:
     src: firewalld-service-euca-gre.xml

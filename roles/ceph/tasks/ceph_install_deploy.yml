@@ -57,11 +57,14 @@
 
 - name: fix mgr directory permissions
   file:
-    path: "/var/lib/ceph/mgr/{{ ansible_hostname }}"
+    path: "/var/lib/ceph/mgr/ceph-{{ ansible_hostname }}"
     state: directory
     owner: ceph
     group: ceph
-    mode: 0750
+    mode: 04750
+    recurse: yes
+  become: yes
+  become_user: ceph
   when: ceph_mgr_create
 
 - name: create manager
