@@ -216,7 +216,7 @@
     immediate: "{{ cloud_firewalld_start }}"
   tags:
     - firewalld
-  when: cloud_firewalld_configure
+  when: cloud_firewalld_configure and vpcmido_gw_ext_device == euca-mgw-veth1
 
 - name: firewalld reload
   systemd:

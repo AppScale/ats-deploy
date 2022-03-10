@@ -15,7 +15,6 @@ cloud_container_image_size: "2"
 cloud_initial_accounts_default: [ "aws", "amazon", "euca" ]
 cloud_initial_accounts_custom: []
 cloud_initial_accounts: "{{ cloud_initial_accounts_default + cloud_initial_accounts_custom }}"
-cloud_awscli_compatibility: no
 
 # EDGE network settings
 edge_subnet: "{{ '172.31.0.0' if edge_bridge_create else ansible_default_ipv4.network }}"

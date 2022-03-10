@@ -358,9 +358,12 @@
 - name: remove added firewalld services and zones
   file:
     path: "{{ item }}"
+    state: absent
   loop:
-  - "/etc/firewalld/zone/euca-cluster.xml"
-  - "/etc/firewalld/zone/euca-vpcmidogw.xml"
+  - "/etc/firewalld/zones/euca-cluster.xml"
+  - "/etc/firewalld/zones/euca-vpcmidogw.xml"
+  - "/etc/firewalld/zones/ceph-cluster.xml"
+  - "/etc/firewalld/zones/ceph-public.xml"
   - "/etc/firewalld/services/euca-gre.xml"
   - "/etc/firewalld/services/eucalyptus.xml"
   - "/etc/firewalld/services/eucalyptus.xml"
@@ -371,6 +374,23 @@
   - "/etc/firewalld/services/euca-vpcmidogw-3.xml"
   - "/etc/firewalld/services/euca-vpcmidogw-4.xml"
   - "/etc/firewalld/services/euca-vpcmidogw-5.xml"
+
+- name: firewalld reload
+  systemd:
+    name: firewalld
+    state: reloaded
+  when: cloud_firewalld_configure | default(False)
+
+- name: remove midonet gw interface from firewalld zone
+  firewalld:
+    zone: trusted
+    interface: euca-mgw-veth0
+    state: disabled
+    permanent: yes
+    immediate: yes
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure | default(False)
 
 - name: remove minio application directory
   file:
