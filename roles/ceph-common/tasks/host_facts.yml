@@ -4,6 +4,16 @@
     eucalyptus_host_cluster_ipv4: "{{ host_cluster_ipv4 | default(ansible_default_ipv4.address) }}"
     eucalyptus_host_public_ipv4: "{{ host_public_ipv4 | default(ansible_default_ipv4.address) }}"
 
+- name: set host public ceph network
+  set_fact:
+    ceph_public_ipv4: "{{ eucalyptus_host_public_ipv4 }}"
+  when: ceph_public_ipv4 is not defined
+
+- name: set host private ceph network
+  set_fact:
+    ceph_private_ipv4: "{{ eucalyptus_host_cluster_ipv4 }}"
+  when: ceph_public_ipv4 is not defined
+
 - name: set host cluster interface fact
   set_fact:
     eucalyptus_host_cluster_interface: "{{ host_cluster_interface }}"

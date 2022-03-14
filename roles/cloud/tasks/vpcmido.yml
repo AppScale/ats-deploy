@@ -44,6 +44,19 @@
     cmd: sysctl -w net/ipv4/conf/{{ cloud_firewalld_public_interface }}/proxy_arp=1
   when: vpcmido_gw_srv_veth_create
 
+- name: eucalyptus midonet gateway ip forwarding
+  command:
+    cmd: sysctl -w net/ipv4/conf/{{ cloud_firewalld_public_interface }}/forwarding=1
+  when: vpcmido_gw_srv_veth_create
+
+- name: eucalyptus midonet gateway don't log martians
+  command:
+    cmd: sysctl -w net/ipv4/conf/all/log_martians=0
+  when: vpcmido_gw_srv_veth_create and vpcmido_dont_log_martians
+
+- name: eucalyptus midonet gateway ip forwarding
+  command:
+    cmd: sysctl -w net/ipv4/conf/{{ cloud_firewalld_public_interface }}/forwarding=1
 - name: eucalyptus midonet gateway forwarding / proxy arp persistent
   copy:
     dest: /etc/sysctl.d/80-net-{{ cloud_firewalld_public_interface }}.conf
@@ -53,6 +66,14 @@
       net/ipv4/conf/{{ cloud_firewalld_public_interface }}/forwarding=1
       net/ipv4/conf/{{ cloud_firewalld_public_interface }}/proxy_arp=1
   when: vpcmido_gw_srv_veth_create
+
+- name: eucalyptus midonet gateway don't log martians
+  copy:
+    dest: /etc/sysctl.d/80-net-all.conf
+    mode: 0644
+    content: |
+      net/ipv4/conf/all/log_martians=0
+  when: vpcmido_gw_srv_veth_create and vpcmido_dont_log_martians
 
 - name: midonet defaults configuration
   template:
@@ -172,40 +193,22 @@
   tags:
     - firewalld
 
-- name: eucalyptus firewalld midonet gateway zone
-  template:
-    src: firewalld-zone-euca-vpcmidogw.xml.j2
-    dest: /etc/firewalld/zones/euca-vpcmidogw.xml
-    owner: root
-    group: root
-    mode: 0644
-  tags:
-    - firewalld
-
-- name: eucalyptus firewalld midonet gateway zone load
-  command:
-    cmd: firewall-cmd --permanent --new-zone euca-vpcmidogw
-  tags:
-    - firewalld
-  register: firewalld_result
-  failed_when: "firewalld_result is failed and 'NAME_CONFLICT' not in firewalld_result.stderr"
-  changed_when: '"NAME_CONFLICT" not in firewalld_result.stderr'
-  when: cloud_firewalld_configure
-
-- name: eucalyptus firewalld midonet gateway zone services
+- name: eucalyptus firewalld midonet gateway zone create
   firewalld:
     zone: euca-vpcmidogw
-    service: "euca-vpcmidogw-{{ cidr_index }}"
-    state: enabled
+    state: present
     permanent: yes
-    immediate: "{{ cloud_firewalld_start }}"
-  loop: "{{ vpcmido_public_ip_cidrs }}"
-  loop_control:
-    index_var: cidr_index
-    loop_var: cidr
   tags:
     - firewalld
-  when: cloud_firewalld_configure and cloud_firewalld_vpcmidogw_zone is not none
+  when: cloud_firewalld_configure
+
+- name: firewalld reload
+  systemd:
+    name: firewalld
+    state: reloaded
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure
 
 - name: eucalyptus firewalld midonet gw device to trusted zone
   firewalld:
@@ -216,15 +219,7 @@
     immediate: "{{ cloud_firewalld_start }}"
   tags:
     - firewalld
-  when: cloud_firewalld_configure and vpcmido_gw_ext_device == euca-mgw-veth1
-
-- name: firewalld reload
-  systemd:
-    name: firewalld
-    state: reloaded
-  tags:
-    - firewalld
-  when: cloud_firewalld_configure and firewalld_result.changed
+  when: cloud_firewalld_configure and vpcmido_gw_ext_device == 'euca-mgw-veth1'
 
 - name: eucalyptus firewalld midonet gateway services for zone
   firewalld:
@@ -251,6 +246,21 @@
   tags:
     - firewalld
   when: cloud_firewalld_configure and cloud_firewalld_vpcmidogw_interface is not none
+
+- name: eucalyptus firewalld midonet gateway zone services
+  firewalld:
+    zone: euca-vpcmidogw
+    service: "euca-vpcmidogw-{{ cidr_index }}"
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  loop: "{{ vpcmido_public_ip_cidrs }}"
+  loop_control:
+    index_var: cidr_index
+    loop_var: cidr
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and cloud_firewalld_vpcmidogw_zone is not none
 
 - name: eucalyptus tunnel zone midonet configuration
   template:

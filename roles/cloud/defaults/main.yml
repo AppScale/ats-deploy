@@ -54,6 +54,7 @@ vpcmido_gw_srv_veth_create: "{{ vpcmido_gw_ext_device == 'euca-mgw-veth1' }}"
 vpcmido_gw_srv_veth0: euca-mgw-veth0
 vpcmido_gw_srv_veth1: euca-mgw-veth1
 vpcmido_gw_srv_veth_prefix: 27
+vpcmido_dont_log_martians: True
 
 # Network settings
 net_mode: EDGE

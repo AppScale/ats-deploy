@@ -8,7 +8,7 @@
     mode: 0644
   tags:
     - firewalld
-  when: ceph_private_network is not none
+  when: cloud_firewalld_configure and ceph_cluster_network is not none
 
 - name: ceph firewalld cluster zone load
   command:
@@ -18,7 +18,7 @@
   register: firewalld_result
   failed_when: "firewalld_result is failed and 'NAME_CONFLICT' not in firewalld_result.stderr"
   changed_when: '"NAME_CONFLICT" not in firewalld_result.stderr'
-  when: ceph_private_network is not none
+  when: cloud_firewalld_configure and ceph_cluster_network is not none
 
 - name: ceph firewalld public zone
   template:
@@ -29,7 +29,11 @@
     mode: 0644
   tags:
     - firewalld
-  when: ceph_public_network is not none
+  when:
+    - cloud_firewalld_configure
+    - ceph_public_network is not none
+    - ceph_cluster_network is not none
+    - ceph_cluster_network != ceph_public_network
 
 - name: ceph firewalld public zone load
   command:
@@ -39,7 +43,11 @@
   register: firewalld_result
   failed_when: "firewalld_result is failed and 'NAME_CONFLICT' not in firewalld_result.stderr"
   changed_when: '"NAME_CONFLICT" not in firewalld_result.stderr'
-  when: ceph_public_network is not none
+  when:
+    - cloud_firewalld_configure
+    - ceph_public_network is not none
+    - ceph_cluster_network is not none
+    - ceph_cluster_network != ceph_public_network
 
 - name: firewalld reload
   systemd:
@@ -47,3 +55,4 @@
     state: reloaded
   tags:
     - firewalld
+  when: cloud_firewalld_configure
