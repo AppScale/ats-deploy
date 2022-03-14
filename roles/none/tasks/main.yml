@@ -345,8 +345,8 @@
   find:
     paths: /etc/sysctl.d/
     file_type: file
-    patterns: '80-net-*.conf'
-    use_regex: true
+    patterns: '^80-net-.*.conf'
+    use_regex: yes
   register: netfiles
 
 - name: remove the sysctl added rules
@@ -375,12 +375,6 @@
   - "/etc/firewalld/services/euca-vpcmidogw-4.xml"
   - "/etc/firewalld/services/euca-vpcmidogw-5.xml"
 
-- name: firewalld reload
-  systemd:
-    name: firewalld
-    state: reloaded
-  when: cloud_firewalld_configure | default(False)
-
 - name: remove midonet gw interface from firewalld zone
   firewalld:
     zone: trusted
@@ -390,6 +384,12 @@
     immediate: yes
   tags:
     - firewalld
+  when: cloud_firewalld_configure | default(False)
+
+- name: firewalld reload
+  systemd:
+    name: firewalld
+    state: reloaded
   when: cloud_firewalld_configure | default(False)
 
 - name: remove minio application directory
