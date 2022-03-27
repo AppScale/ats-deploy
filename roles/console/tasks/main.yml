@@ -26,6 +26,12 @@
     regexp: '^ufshost = .+$'
     replace: 'ufshost = {{ cloud_system_dns_dnsdomain }}'
 
+- name: eucaconsole ufsport configuration
+  replace:
+    path: /etc/eucaconsole/console.ini
+    regexp: '^ufsport = .+$'
+    replace: 'ufsport = {{ cloud_public_port }}'
+
 - name: eucaconsole aws login configuration
   replace:
     path: /etc/eucaconsole/console.ini
