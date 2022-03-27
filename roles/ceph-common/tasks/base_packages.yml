@@ -5,6 +5,7 @@
       - net-tools
       - rsync
       - wget
+      - iproute
     state: present
   tags:
     - image

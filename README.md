@@ -7,13 +7,35 @@ cp inventory_example.yml inventory.yml
 vi inventoy.yml
 ```
 
-to install with EDGE network mode:
+## Configuration
+
+The important options to set up are:
+
+```
+cloud_system_dns_dnsdomain=<DNS subdomain this deployment is responsible for>
+vpcmido_public_ip_cidr=<public IPs available to the instances>
+```
+
+the DNS subdomain needs to be delegated to the cloud (CLC) machine. For
+example to delegate ats.mydomain.foo with dnsmasq you cam add:
+
+```
+server=/ats.mydomain.foo/<CLC IP address>
+```
+
+to enable the delegation.
+
+
+
+## Installing the different networks mode
+
+To install with EDGE network mode:
 
 ```
 ansible-playbook -i inventory.yml playbook[_edge].yml
 ```
 
-to install with VPCMIDO network mode:
+to install with VPCMIDO network mode (recommended):
 
 ```
 ansible-playbook -i inventory.yml playbook_vpcmido.yml
@@ -34,8 +56,9 @@ Tags can be used to control which aspects of the playbook are used:
 Example tag use:
 
 ```
-ansible-playbook --tags      image -i inventory.yml playbook.yml
-ansible-playbook --skip-tags image -i inventory.yml playbook.yml
+ansible-playbook --tags      image             -i inventory.yml playbook.yml
+ansible-playbook --skip-tags image             -i inventory.yml playbook.yml
+ansible-playbook --skip-tags selinux,firewalld -i inventory.yml playbook.yml
 ```
 
 which would run the playbook in two parts, the first installing packages
