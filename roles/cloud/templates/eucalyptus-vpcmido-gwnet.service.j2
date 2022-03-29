@@ -12,6 +12,9 @@ ExecStartPre=-/usr/sbin/ip addr add {{ vpcmido_gw_ext_router_ip }}/{{ vpcmido_gw
 ExecStartPre=-/usr/sbin/ip route add {{ cidr }} via {{ vpcmido_gw_ext_ip }} dev {{ vpcmido_gw_srv_veth0 }}
 {% endfor %}
 ExecStart=/usr/bin/true
+{% if vpcmido_dont_log_martians %}
+ExecStartPre=-/usr/sbin/sysctl -w net.ipv4.conf.{{ vpcmido_gw_srv_veth0 }}.log_martians=0
+{% endif %}
 
 [Install]
 WantedBy=multi-user.target
