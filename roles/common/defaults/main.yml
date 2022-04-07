@@ -20,6 +20,7 @@ eucalyptus_local_midonet_dir: /root/midonet
 eucalyptus_product: eucalyptus
 
 # Cloud settings
+cloud_public_port: 8773
 cloud_region_name: cloud-1
 cloud_zone_1_name: "{{ cloud_region_name }}a"
 cloud_zone_2_name: "{{ cloud_region_name }}b"
