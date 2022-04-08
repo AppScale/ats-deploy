@@ -1,0 +1,43 @@
+---
+- name: eucalyptus firewalld service
+  template:
+    src: firewalld-service-eucalyptus.xml.j2
+    dest: /etc/firewalld/services/eucalyptus.xml
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - firewalld
+    - image
+  register: copy_result
+
+- name: firewalld reload
+  systemd:
+    name: firewalld
+    state: reloaded
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and copy_result.changed
+
+- name: eucalyptus service firewalld zone
+  firewalld:
+    zone: "{{ cloud_firewalld_public_zone }}"
+    service: eucalyptus
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and cloud_firewalld_public_zone is not none
+
+- name: cloud firewalld dns service for public zone
+  firewalld:
+    zone: "{{ cloud_firewalld_public_zone }}"
+    service: dns
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and cloud_firewalld_dns_configure and cloud_firewalld_public_zone is not none
+

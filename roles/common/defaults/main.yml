@@ -92,6 +92,7 @@ net_node_router_ip: "{{ edge_router_ip }}"
 
 # DNS Settings
 cloud_dns_authoritative_balancer: no
+cloud_use_dnsmasq: no
 
 # Role settings
 key_facts: no
