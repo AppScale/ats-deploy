@@ -19,7 +19,6 @@ all:
     cloud_system_dns_dnsdomain: "ciab-{{ cloud_address|replace('.', '-') }}.demo.euca.me"
     cloud_firewalld_cluster_cidr: "{{ cloud_address }}/32"
     cloud_firewalld_configure: yes
-    cloud_dns_listener_port: 5353
     cloud_use_dnsmasq: yes
     
     # Memory should be increased where available

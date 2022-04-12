@@ -135,6 +135,7 @@
       - eucalyptus-service-image
       - eucalyptus-service-image-tools
       - eucalyptus-walrus
+      - eucalyptus-awscli-plugin
       - eucanetd
       - euca2ools
       - libvirt-daemon
@@ -142,6 +143,7 @@
       - qemu-kvm-common
       - scsi-target-utils
       - dnsmasq
+      - dnsdist
     state: absent
 
 - name: remove midonet and dependency packages

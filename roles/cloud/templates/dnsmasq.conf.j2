@@ -1,2 +1,5 @@
-server=/{{ cloud_system_dns_dnsdomain }}/{{ eucalyptus_host_public_ipv4 }}#{{ cloud_dns_listener_port }}
+listen-address=127.0.0.1
+interface=lo
+bind-interfaces
+server=/*.{{ cloud_system_dns_dnsdomain }}/{{ eucalyptus_host_public_ipv4 }}#{{ cloud_dns_listener_port|default(53) }}
 resolv-file=/etc/dnsmasq-euca.resolv

@@ -7,14 +7,19 @@
     - image
     - packages
 
-- name: set cloud dns listening port
-  shell: |
-    set -eu
-    eval $(clcadmin-assume-system-credentials)
-    euctl --region localhost dns.dns_listener_port={{ cloud_dns_listener_port | quote }}
-  register: shell_result
-  until: shell_result.rc == 0
-  retries: 5
+- name: disable DNS updates for NetworkManager
+  lineinfile:
+    path: /etc/NetworkManager/NetworkManager.conf
+    line: dns=none
+    regexp: ^dns=none$
+    insertafter: ^\[main\]$
+  register: NM_conf
+
+- name: restart NetworkManager
+  systemd:
+    state: restarted
+    name: NetworkManager.service
+  when: NM_conf is changed
 
 - name: set dnsmasq upstreams servers
   ansible.builtin.copy:
@@ -25,6 +30,12 @@
     force: no
     mode: '0644'
     backup: yes
+
+- name: add cloud nameserver to handle subdomain
+  lineinfile:
+    path: /etc/dnsmasq-euca.resolv
+    line: nameserver {{ eucalyptus_host_public_ipv4 }}
+    state: present
 
 - name: set dnsmasq to delegate domain to CLC
   template:
@@ -38,22 +49,8 @@
 - name: start dnsmasq service
   systemd:
     enabled: true
-    state: started
-    name: dnsmasq
-
-- name: disable DNS updates for NetworkManager
-  lineinfile:
-    path: /etc/NetworkManager/NetworkManager.conf
-    line: dns=none
-    regexp: ^dns=none$
-    insertafter: ^\[main\]$
-  register: NM_conf
-
-- name: restart NetworkManager
-  systemd:
     state: restarted
-    name: NetworkManager.service
-  when: NM_conf
+    name: dnsmasq
 
 - name: set resolv.conf to point to dnsmasq
   ansible.builtin.copy:
@@ -61,7 +58,7 @@
     dest: /etc/resolv.conf
     owner: root
     group: root
-    force: no
+    force: yes
     mode: '0644'
     backup: yes
 

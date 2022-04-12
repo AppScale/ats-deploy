@@ -6,6 +6,9 @@
 
 - import_tasks: firewall.yml
 
+- import_tasks: dnsmasq.yml
+  when: cloud_use_dnsmasq
+
 - name: configure selinux bool httpd_can_network_connect
   seboolean:
     name: httpd_can_network_connect
@@ -336,9 +339,6 @@
     chmod 600 /root/.aws/credentials
   args:
     creates: /root/.aws/credentials
-
-- import_tasks: dnsmasq.yml
-  when: cloud_use_dnsmasq and cloud_dns_listener_port != 53
 
 - name: install service image from rpm
   shell: |

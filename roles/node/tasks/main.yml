@@ -56,11 +56,11 @@
     state: started
     name: libvirtd
 
-- name: stop dnsmasq service
-  systemd:
-    enabled: false
-    state: stopped
-    name: dnsmasq
+#- name: stop dnsmasq service
+#  systemd:
+#    enabled: false
+#    state: stopped
+#    name: dnsmasq
 
 - name: ceph configuration directory
   file:
