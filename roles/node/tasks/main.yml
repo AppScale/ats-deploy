@@ -56,11 +56,12 @@
     state: started
     name: libvirtd
 
-#- name: stop dnsmasq service
-#  systemd:
-#    enabled: false
-#    state: stopped
-#    name: dnsmasq
+- name: stop dnsmasq service
+  systemd:
+    enabled: false
+    state: stopped
+    name: dnsmasq
+  when: "'cloud' not in group_names"
 
 - name: ceph configuration directory
   file:
