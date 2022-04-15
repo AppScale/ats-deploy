@@ -1,0 +1,80 @@
+---
+- name: install eucalyptus related utility packages
+  yum:
+    name:
+    - attr
+    - awscli
+    - bash-completion
+    - bzip2
+    - eucalyptus-awscli-plugin
+    - qemu-img
+    - wget
+    - xz
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: install eucalyptus-cloud package
+  yum:
+    name: eucalyptus-cloud{{ eucalyptus_package_suffix }}
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: install eucalyptus-service-image package
+  yum:
+    name: eucalyptus-service-image
+    state: present
+  tags:
+    - image
+    - packages
+  when: cloud_service_image_rpm
+
+- name: install eucalyptus-service-image-tools package
+  yum:
+    name: eucalyptus-service-image-tools
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: install eucalyptus-walrus package
+  yum:
+    name: eucalyptus-walrus{{ eucalyptus_package_suffix }}
+    state: present
+  tags:
+    - image
+    - packages
+  when: eucalyptus_ceph_conf is undefined
+
+- name: install eucanetd package
+  yum:
+    name: eucanetd{{ eucalyptus_package_suffix }}
+    state: present
+  tags:
+    - image
+    - packages
+  when: net_mode == "VPCMIDO"
+
+- name: install nginx package
+  yum:
+    name:
+    - nginx
+    - nginx-mod-http-perl
+    state: present
+  tags:
+    - image
+    - packages
+  when: net_mode == "VPCMIDO"
+
+- name: install dnsdist package
+  yum:
+    name: dnsdist
+    state: present
+  tags:
+    - image
+    - packages
+  when: cloud_dns_authoritative_balancer
+

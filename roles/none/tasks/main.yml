@@ -135,12 +135,15 @@
       - eucalyptus-service-image
       - eucalyptus-service-image-tools
       - eucalyptus-walrus
+      - eucalyptus-awscli-plugin
       - eucanetd
       - euca2ools
       - libvirt-daemon
       - nginx
       - qemu-kvm-common
       - scsi-target-utils
+      - dnsmasq
+      - dnsdist
     state: absent
 
 - name: remove midonet and dependency packages
@@ -374,6 +377,21 @@
   - "/etc/firewalld/services/euca-vpcmidogw-3.xml"
   - "/etc/firewalld/services/euca-vpcmidogw-4.xml"
   - "/etc/firewalld/services/euca-vpcmidogw-5.xml"
+
+- name: remove added dnsmasq configuration
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+  - "/etc/dnsmasq-euca.resolv"
+  - "/etc/dnsmasq.d/euca.conf"
+
+- name: remove changes to NetworkManager
+  lineinfile:
+    path: /etc/NetworkManager/NetworkManager.conf
+    regexp: ^dns=none$
+    state: absent
+  register: NM_conf
 
 - name: remove midonet gw interface from firewalld zone
   firewalld:

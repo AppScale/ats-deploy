@@ -6,7 +6,8 @@ eucalyptus_package_suffix: "{{ '-' + eucalyptus_package_version if eucalyptus_pa
 cloud_region_region_name: "{{ cloud_region_name }}"
 cloud_listener_cidr: 0.0.0.0/32
 cloud_listener_port: "{{ cloud_public_port }}"
-cloud_properties: {}
+cloud_properties:
+  - bootstrap.webservices.unknown_parameter_handling: ignore
 cloud_admin_password: ""
 cloud_service_image_rpm: yes
 cloud_service_image_size: "5"
