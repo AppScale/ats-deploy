@@ -49,9 +49,9 @@ ansible-playbook -i inventory.yml playbook_clean.yml
 
 Tags can be used to control which aspects of the playbook are used:
 
-* `image` : `packages` and generic configuration
-* `packages` : installs yum repositories and rpms
-* `eucalyptus_get_midonet: downloads only Midonet packages locally
+* `image`               : `packages` and generic configuration
+* `packages`            : installs yum repositories and rpms
+* `midonet-packages     : downloads only Midonet packages locally
 
 Example tag use:
 
