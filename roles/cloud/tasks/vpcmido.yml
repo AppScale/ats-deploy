@@ -39,21 +39,7 @@
     mode: 0644
   when: vpcmido_gw_srv_veth_create
 
-- name: eucalyptus midonet gateway proxy arp runtime
-  command:
-    cmd: sysctl -w net.ipv4.conf.{{ cloud_firewalld_public_interface }}.proxy_arp=1
-  when: vpcmido_gw_srv_veth_create
-
-- name: eucalyptus midonet gateway ip forwarding
-  command:
-    cmd: sysctl -w net.ipv4.conf.{{ cloud_firewalld_public_interface }}.forwarding=1
-  when: vpcmido_gw_srv_veth_create
-
-- name: eucalyptus midonet gateway ip forwarding
-  command:
-    cmd: sysctl -w net/ipv4/conf/{{ cloud_firewalld_public_interface }}/forwarding=1
-
-- name: eucalyptus midonet gateway forwarding / proxy arp persistent
+- name: eucalyptus midonet gateway set rules for forwarding / proxy arp
   copy:
     dest: /etc/sysctl.d/80-net-{{ cloud_firewalld_public_interface }}.conf
     mode: 0644
@@ -61,6 +47,11 @@
       # Enable forwarding and proxy arp for eucalyptus midonet gateway
       net.ipv4.conf.{{ cloud_firewalld_public_interface }}.forwarding = 1
       net.ipv4.conf.{{ cloud_firewalld_public_interface }}.proxy_arp = 1
+  when: vpcmido_gw_srv_veth_create
+
+- name: eucalyptus midonet enable forwarding / proxy_arp now
+  command:
+    cmd: sysctl -p
   when: vpcmido_gw_srv_veth_create
 
 - name: eucalyptus midonet gateway don't log martians
