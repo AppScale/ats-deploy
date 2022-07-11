@@ -6,6 +6,7 @@
       - rsync
       - wget
       - iproute
+      - ntp
     state: present
   tags:
     - image
