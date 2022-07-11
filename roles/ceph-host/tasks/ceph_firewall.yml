@@ -1,15 +1,4 @@
 ---
-- name: ceph firewalld cluster zone
-  template:
-    src: firewalld-zone-ceph-cluster.xml.j2 
-    dest: /etc/firewalld/zones/ceph-cluster.xml
-    owner: root
-    group: root
-    mode: 0644
-  tags:
-    - firewalld
-  when: cloud_firewalld_configure and ceph_cluster_network is not none
-
 - name: ceph firewalld cluster zone load
   command:
     cmd: firewall-cmd --permanent --new-zone ceph-cluster
@@ -18,22 +7,25 @@
   register: firewalld_result
   failed_when: "firewalld_result is failed and 'NAME_CONFLICT' not in firewalld_result.stderr"
   changed_when: '"NAME_CONFLICT" not in firewalld_result.stderr'
-  when: cloud_firewalld_configure and ceph_cluster_network is not none
+  when:
+    - cloud_firewalld_configure
+    - ceph_cluster_network is not none
+    - ceph_cluster_network != cloud_firewalld_cluster_cidr
 
-- name: ceph firewalld public zone
+- name: ceph firewalld cluster zone
   template:
-    src: firewalld-zone-ceph-public.xml.j2
-    dest: /etc/firewalld/zones/ceph-public.xml
+    src: firewalld-zone-ceph-cluster.xml.j2
+    dest: /etc/firewalld/zones/ceph-cluster.xml
     owner: root
     group: root
+    force: yes
     mode: 0644
   tags:
     - firewalld
   when:
     - cloud_firewalld_configure
-    - ceph_public_network is not none
     - ceph_cluster_network is not none
-    - ceph_cluster_network != ceph_public_network
+    - ceph_cluster_network != cloud_firewalld_cluster_cidr
 
 - name: ceph firewalld public zone load
   command:
@@ -46,8 +38,20 @@
   when:
     - cloud_firewalld_configure
     - ceph_public_network is not none
-    - ceph_cluster_network is not none
-    - ceph_cluster_network != ceph_public_network
+
+- name: ceph firewalld public zone
+  template:
+    src: firewalld-zone-ceph-public.xml.j2
+    dest: /etc/firewalld/zones/ceph-public.xml
+    owner: root
+    group: root
+    force: yes
+    mode: 0644
+  tags:
+    - firewalld
+  when:
+    - cloud_firewalld_configure
+    - ceph_public_network is not none
 
 - name: firewalld reload
   systemd:
