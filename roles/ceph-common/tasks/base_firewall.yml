@@ -5,7 +5,7 @@
     name: firewalld
   tags:
     - firewalld
-  when: cloud_firewalld_start
+  when: cloud_firewalld_configure
 
 - name: firewalld public interface zone
   firewalld:
@@ -29,6 +29,16 @@
     - firewalld
   when: cloud_firewalld_cluster_interface is not none and cloud_firewalld_cluster_zone is not none
 
+- name: eucalyptus firewalld cluster zone load
+  command:
+    cmd: firewall-cmd --permanent --new-zone euca-cluster
+  tags:
+    - firewalld
+  register: firewalld_result
+  failed_when: "firewalld_result is failed and 'NAME_CONFLICT' not in firewalld_result.stderr"
+  changed_when: '"NAME_CONFLICT" not in firewalld_result.stderr'
+  when: cloud_firewalld_cluster_cidr is not none
+
 - name: eucalyptus gre service
   copy:
     src: firewalld-service-euca-gre.xml
@@ -36,6 +46,7 @@
     owner: root
     group: root
     mode: 0644
+    force: yes
   tags:
     - firewalld
   when: cloud_firewalld_cluster_cidr is not none
@@ -47,18 +58,9 @@
     owner: root
     group: root
     mode: 0644
+    force: yes
   tags:
     - firewalld
-  when: cloud_firewalld_cluster_cidr is not none
-
-- name: eucalyptus firewalld cluster zone load
-  command:
-    cmd: firewall-cmd --permanent --new-zone euca-cluster
-  tags:
-    - firewalld
-  register: firewalld_result
-  failed_when: "firewalld_result is failed and 'NAME_CONFLICT' not in firewalld_result.stderr"
-  changed_when: '"NAME_CONFLICT" not in firewalld_result.stderr'
   when: cloud_firewalld_cluster_cidr is not none
 
 - name: firewalld default zone
