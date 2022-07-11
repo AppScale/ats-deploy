@@ -15,3 +15,9 @@
     - firewalld
     - image
   when: firewalld_package_result.changed
+
+- name: ensure ntpd is running
+  systemd:
+    enabled: yes
+    name: ntpd
+    state: started
