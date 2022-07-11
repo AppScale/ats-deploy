@@ -21,7 +21,6 @@
   - midonet-cluster-5.2.2-1.0.el7.noarch.rpm
   - midonet-tools-5.2.2-1.0.el7.noarch.rpm
   - python-midonetclient-5.2.2-1.0.el7.noarch.rpm
-  run_once: true
   when: eucalyptus_get_midonet
   tags:
   - midonet-packages
@@ -35,7 +34,6 @@
   loop:
   - midonet-selinux-1.0-2.el7.centos.noarch.rpm
   - zkdump-1.05-1.noarch.rpm
-  run_once: true
   when: eucalyptus_get_midonet
   tags:
   - midonet-packages
@@ -58,7 +56,6 @@
   - zookeeper-3.4.8-4.x86_64.rpm
   - zookeeper-debuginfo-3.4.8-4.x86_64.rpm
   - zookeeper-lib-3.4.5-1.x86_64.rpm
-  run_once: true
   when: eucalyptus_get_midonet
   tags:
   - midonet-packages
