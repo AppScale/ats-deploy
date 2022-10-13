@@ -30,19 +30,6 @@
     CONSOLE_ACCOUNT_NUMBER=$(euare-accountlist | grep "^${CONSOLE_ACCOUNT_ALIAS}[[:space:]]" | cut -f 2)
     euca-modify-image-attribute -l -a "${CONSOLE_ACCOUNT_NUMBER}" "${CONSOLE_IMAGEID}"
 
-- name: console route53 system domain for eucalyptus-cloud authentication
-  shell: |
-    set -eu
-    eval $(clcadmin-assume-system-credentials)
-    euform-create-stack \
-      --template-file /var/lib/eucalyptus/templates/eucalyptus-dns-template.yaml \
-      eucalyptus-dns
-  register: shell_result
-  changed_when: '"AlreadyExists" not in shell_result.stderr'
-  failed_when:
-    - shell_result.rc != 0
-    - '"AlreadyExists" not in shell_result.stderr'
-
 - name: console elastic ip address stack
   shell: |
     set -eu
