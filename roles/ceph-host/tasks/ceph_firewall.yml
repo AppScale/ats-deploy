@@ -38,6 +38,7 @@
   when:
     - cloud_firewalld_configure
     - ceph_public_network is not none
+    - ceph_public_network != cloud_firewalld_cluster_cidr
 
 - name: ceph firewalld public zone
   template:
@@ -52,6 +53,7 @@
   when:
     - cloud_firewalld_configure
     - ceph_public_network is not none
+    - ceph_public_network != cloud_firewalld_cluster_cidr
 
 - name: firewalld reload
   systemd:

@@ -5,6 +5,10 @@
   environment:
     PYTHONPATH: /usr/lib/python2.7/site-packages/WebOb-1.4.1-py2.7.egg/
     EUCA_TZ_HOST_EXTRAS: "{{ groups.node | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | sort | join(' ') }}"
+  delay: 3
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
 
 - name: create eucalyptus account default vpc
   shell: |
