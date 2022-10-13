@@ -11,6 +11,12 @@
   tags:
     - packages
 
+- name: fix issues with latest CentOS 7
+  yum:
+    name: python-s3transfer.0.1.13-1.el7.0.1
+    allow_downgrade: yes
+    state: present
+
 - name: certbot-renew service.d directory
   file:
     path: /etc/systemd/system/certbot-renew.service.d
@@ -26,19 +32,6 @@
     owner: root
     group: root
     mode: 0644
-
-- name: certbot route53 system domain for eucalyptus-cloud authentication
-  shell: |
-    set -eu
-    eval $(clcadmin-assume-system-credentials)
-    euform-create-stack \
-      --template-file /var/lib/eucalyptus/templates/eucalyptus-dns-template.yaml \
-      eucalyptus-dns
-  register: shell_result
-  changed_when: '"AlreadyExists" not in shell_result.stderr'
-  failed_when:
-    - shell_result.rc != 0
-    - '"AlreadyExists" not in shell_result.stderr'
 
 - name: certbot firstboot certificate for eucalyptus-cloud
   shell: |

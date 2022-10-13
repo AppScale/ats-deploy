@@ -8,6 +8,12 @@
   tags:
     - packages
 
+- name: fix issues with latest CentOS 7
+  yum:
+    name: python-s3transfer.0.1.13-1.el7.0.1
+    allow_downgrade: yes
+    state: present
+
 - name: certbot configuration to issue for service endpoints
   set_fact:
     eucaconsole_certbot_domain: "{{ eucaconsole_certbot_domain }},{{ eucaconsole_certbot_services | map('regex_replace', '^(.*)$', '\\1.' + cloud_system_dns_dnsdomain) | list | unique | sort | join(',') }}"
