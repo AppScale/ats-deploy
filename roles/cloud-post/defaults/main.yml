@@ -15,6 +15,15 @@ eucalyptus_console_product: "{{ eucalyptus_product|default('eucalyptus') }}"
 eucalyptus_monitoring_enable: no
 eucalyptus_monitoring_account: cloud-monitoring
 
+# Instance types to enable
+enable_M1_instances: False
+enable_M2_instances: False
+enable_M3_instances: False
+enable_M4_instances: False
+enable_M5D_instances: False
+enable_T1_instances: False
+enable_T3_instances: False
+
 # Certbot for eucalyptus-cloud
 eucalyptus_services_certbot_enable: no
 eucalyptus_services_certbot_email: ""
