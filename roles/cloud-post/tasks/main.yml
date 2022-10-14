@@ -92,3 +92,11 @@
   failed_when:
     - shell_result.rc != 0
     - '"Stack already exists" not in shell_result.stderr'
+
+- name: restart dnsmasq service
+  systemd:
+    enabled: true
+    state: restarted
+    name: dnsmasq
+  when: cloud_use_dnsmasq
+
