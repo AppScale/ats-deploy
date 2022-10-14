@@ -79,13 +79,12 @@
     name: dnsdist@eucalyptus
   when: cloud_dns_authoritative_balancer|default(False)
 
-- name: add T3 instances type
+- name: add basics instances type
   shell: |
     set -eu
     eval $(clcadmin-assume-system-credentials)
     euform-create-stack \
       --template-file /usr/share/eucalyptus/doc/ec2-instance-types-general.yaml \
-      -p EnableT3=True \
       ec2-instance-types-general
   register: shell_result
   changed_when: '"AlreadyExists" not in shell_result.stderr'
@@ -93,10 +92,40 @@
     - shell_result.rc != 0
     - '"Stack already exists" not in shell_result.stderr'
 
+- name: wait for basic instances type template to complete
+  shell: |
+    set -euo pipefail
+    eval $(clcadmin-assume-system-credentials)
+    euform-describe-stacks ec2-instance-types-general | grep _COMPLETE
+  register: shell_result
+  changed_when: False
+  until: shell_result is succeeded
+  retries: 5
+  delay: 30
+
+- name: add more instances type as configured
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    euform-update-stack \
+      --template-file /usr/share/eucalyptus/doc/ec2-instance-types-general.yaml \
+      -p EnableM1={{ enable_M1_instances |default(False) }}\
+      -p EnableM2={{ enable_M2_instances |default(False) }}\
+      -p EnableM3={{ enable_M3_instances |default(False) }}\
+      -p EnableM4={{ enable_M4_instances |default(False) }}\
+      -p EnableM5D={{ enable_M5D_instances |default(False) }}\
+      -p EnableT1={{ enable_T1_instances |default(False) }}\
+      -p EnableT3={{ enable_T3_instances |default(False) }}\
+      ec2-instance-types-general
+  register: shell_result
+  changed_when: '"No updates are to be performed" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"No updates are to be performed" not in shell_result.stderr'
+
 - name: restart dnsmasq service
   systemd:
     enabled: true
     state: restarted
     name: dnsmasq
   when: cloud_use_dnsmasq
-
