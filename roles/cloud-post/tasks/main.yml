@@ -123,3 +123,10 @@
     - shell_result.rc != 0
     - '"No updates are to be performed" not in shell_result.stderr'
 
+- name: restart dnsmasq service
+  systemd:
+    enabled: true
+    state: restarted
+    name: dnsmasq
+  when: cloud_use_dnsmasq
+  

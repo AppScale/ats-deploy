@@ -30,23 +30,73 @@ vi inventory.yml
 
 ## Configuration
 
-The important options to set up are:
+To operate the cloud __will need__ a subdomain, and a set of public IPs to be used for the instances and services. The options to set them up are:
 
 ```
-cloud_system_dns_dnsdomain=<DNS subdomain this deployment is responsible for>
-vpcmido_public_ip_cidr=<public IPs available to the instances>
+cloud_system_dns_dnsdomain: <DNS subdomain this deployment is responsible for>
 ```
 
 the DNS subdomain needs to be delegated to the cloud (CLC) machine. For
-example to delegate ats.mydomain.foo with dnsmasq you cam add:
+example to delegate _ats.mydomain.foo_ with dnsmasq add to dnsmasq configuration (for bind or other DNS server, follow their respective documentation):
 
 ```
 server=/ats.mydomain.foo/<CLC IP address>
 ```
 
-to enable the delegation.
+to enable the delegation. For the public IPs, you will need to define the network they are in and list them:
 
+```
+vpcmido_public_ip_cidr: <public IPs for example 10.1.1.0/24>
+vpcmido_public_ip_range: <IPs list for example 10.1.1.5-10.1.1.50>
+```
 
+## Configuration Options
+There are few variables to use to configure the cloud:
+
+```
+cloud_firewalld_configure: yes
+```
+default is no, but without this one you either disable firewalld or you configure it by hand;
+
+```
+cloud_use_dnsmasq: no
+```
+default is yes and it is recommended to keep it. Without a local dnsmasq running on the CLC configured to delegate the subdomain to the CLC, your deployment will depends on external DNS server to operate some functionalities (for example ELBs and more);
+
+```
+ceph_osd_data_path:
+  - /dev/sdg
+  - /dev/sdh
+```
+if you choose to let this script setup ceph for you, this is the list (1 or more) of hard disks to delegate to each ceph machine. The disks needs to be empty, without tags;
+
+```
+cloud_region_name: my_lovely_cloud
+```
+you can customize here your deployment region's name (from the unimaginative default of cloud-1);
+
+```
+cloud_zone_1_name: developers
+cloud_zone_2_name: sales
+cloud_zone_3_name: production
+```
+you can customize here the name if each AZ you have configured. Defaults is to add _a_, _b_ etc... to the deployment name;
+
+```
+eucalyptus_console_cname: ec2.clouddns_subdomain
+```
+this is the CNAME to be used with your deployment Route53 to set an entry for the console. The default assumes you installed the eucaconsole on the CLC machine, and thus we add an entry of _ec2.your_dns_cloud_subdomain_. If you prefer to set a full A record instead add also _eucalyptus_console_ipv4: IP_address_;
+
+```
+enable_M1_instances: False
+enable_M2_instances: False
+enable_M3_instances: False
+enable_M4_instances: False
+enable_M5D_instances: False
+enable_T1_instances: False
+enable_T3_instances: False
+```
+turns each one of the above to True to have more instance types available in your deployment.
 
 ## Installing the different networks mode
 
