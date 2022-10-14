@@ -129,3 +129,4 @@
     state: restarted
     name: dnsmasq
   when: cloud_use_dnsmasq
+  
