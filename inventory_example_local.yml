@@ -29,6 +29,7 @@ all:
     midonet_zookeeper_heap: 512m
     midonet_cluster_heap: 512m
     midonet_midolman_heap: 512m
+    ceph_osd_pool_pgnum: 16
     
     # If using EDGE then br0 must be configured and these
     # ip address ranges should be updated
