@@ -162,3 +162,9 @@ and ceph_private_ipv4.
 
 Without any specification the Eucalyputs public and cluster networks will be
 used.
+
+```
+ceph_osd_pool_pgnum: 256
+```
+This value should be adjusted to the specific ceph deployments (number of
+OSDs, nodes, expected use etc...).
