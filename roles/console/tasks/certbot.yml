@@ -3,7 +3,10 @@
 
 - name: install certbot package
   yum:
-    name: certbot
+    name:
+    - certbot
+    - python2-certbot-dns-route53
+    - python2-futures
     state: present
   tags:
     - packages
