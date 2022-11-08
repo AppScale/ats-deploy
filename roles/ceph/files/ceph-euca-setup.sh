@@ -14,6 +14,10 @@ if ! ceph osd pool ls | grep -q ${EUCA_CEPH_VOLUME_POOL_NAME} ; then
     echo "Generating volume pool ${EUCA_CEPH_VOLUME_POOL_NAME}"
     ceph osd pool create ${EUCA_CEPH_VOLUME_POOL_NAME} ${EUCA_POOL_PLACEMENT_GROUPS}
     ceph osd pool application enable ${EUCA_CEPH_VOLUME_POOL_NAME} rbd 2>/dev/null || true
+    if [[ "${EUCA_CEPH_MIN_CLIENT:0:1}" > "l" ]]; then
+        ceph mgr module enable pg_autoscaler
+        ceph osd pool set ${EUCA_CEPH_VOLUME_POOL_NAME} pg_autoscale_mode on
+    fi
 fi
 
 if [ "${EUCA_CEPH_VOLUME_POOL_NAME}" != "${EUCA_CEPH_SNAPSHOT_POOL_NAME}" ] ; then
@@ -21,6 +25,10 @@ if [ "${EUCA_CEPH_VOLUME_POOL_NAME}" != "${EUCA_CEPH_SNAPSHOT_POOL_NAME}" ] ; th
         echo "Generating snapshot pool ${EUCA_CEPH_SNAPSHOT_POOL_NAME}"
         ceph osd pool create ${EUCA_CEPH_SNAPSHOT_POOL_NAME} ${EUCA_POOL_PLACEMENT_GROUPS}
         ceph osd pool application enable ${EUCA_CEPH_SNAPSHOT_POOL_NAME} rbd 2>/dev/null || true
+        if [[ "${EUCA_CEPH_MIN_CLIENT:0:1}" > "l" ]]; then
+            ceph mgr module enable pg_autoscaler
+            ceph osd pool set ${EUCA_CEPH_SNAPSHOT_POOL_NAME} pg_autoscale_mode on
+        fi
     fi
 fi
 
