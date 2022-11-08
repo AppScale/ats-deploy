@@ -64,6 +64,12 @@ cloud_instances_conf_max_cores: "{{ cloud_instances.conf.max_cores }}"
 cloud_instances_conf_max_mem: "{{ cloud_instances.conf.max_mem }}"
 cloud_instances_conf_custom: "{{ cloud_instances.conf.custom }}"
 
+# Certbot for eucalyptus-cloud
+eucalyptus_services_certbot_enable: no
+eucalyptus_services_certbot_email: ""
+eucalyptus_services_certbot_certonly_opts: "--no-eff-email"
+eucalyptus_services_endpoints: ['*', '*.s3']
+
 # EDGE network settings
 edge_router_enabled: Y
 edge_router_ip: AUTO

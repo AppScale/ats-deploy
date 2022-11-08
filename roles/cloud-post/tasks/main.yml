@@ -12,27 +12,11 @@
 - import_tasks: vpcmido.yml
   when: net_mode == "VPCMIDO"
 
-- name: route53 system domain setup
-  shell: |
-    set -eu
-    eval $(clcadmin-assume-system-credentials)
-    euform-create-stack \
-      --template-file /var/lib/eucalyptus/templates/eucalyptus-dns-template.yaml \
-      eucalyptus-dns
-  register: shell_result
-  changed_when: '"AlreadyExists" not in shell_result.stderr'
-  failed_when:
-    - shell_result.rc != 0
-    - '"AlreadyExists" not in shell_result.stderr'
-
 - import_tasks: console.yml
   when: eucalyptus_console_cloud_deploy and net_mode == "VPCMIDO"
 
 - import_tasks: monitoring.yml
   when: eucalyptus_monitoring_enable
-
-- import_tasks: certbot.yml
-  when: eucalyptus_services_certbot_enable
 
 - name: enable imaging service
   shell: |

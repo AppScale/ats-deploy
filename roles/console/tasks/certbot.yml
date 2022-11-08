@@ -47,12 +47,35 @@
   until: shell_result is succeeded
   retries: 5
   delay: 30
+  when: not eucalyptus_services_certbot_enable
+
+
+- name: eucaconsole set link to cert
+  ansible.builtin.file:
+    src: /etc/letsencrypt/live/eucalyptus-cloud/fullchain.pem
+    dest: /etc/pki/tls/certs/eucaconsole.crt
+    owner: root
+    group: root
+    force: yes
+    state: link
+  when: eucalyptus_services_certbot_enable
+
+- name: eucaconsole set linlk to cert private key
+  ansible.builtin.file:
+    src: /etc/letsencrypt/live/eucalyptus-cloud/privkey.pem
+    dest: /etc/pki/tls/certs/eucaconsole.key
+    owner: root
+    group: root
+    force: yes
+    state: link
+  when: eucalyptus_services_certbot_enable
 
 - name: eucaconsole certbot https renewal
   systemd:
     enabled: true
     state: started
     name: certbot-renew.timer
+  when: not eucalyptus_services_certbot_enable
 
 - name: configure cloud property for services https
   shell: |
@@ -60,4 +83,4 @@
     eval $(clcadmin-assume-system-credentials)
     euctl bootstrap.webservices.ssl.server_alias=eucalyptus-cloud
   delegate_to: "{{ groups.cloud[0] }}"
-  when: eucaconsole_certbot_request_service_domains and cloud_system_dns_dnsdomain
+  when: eucaconsole_certbot_request_service_domains and cloud_system_dns_dnsdomain and not eucalyptus_services_certbot_enable
