@@ -11,12 +11,6 @@
   tags:
     - packages
 
-- name: fix issues with latest CentOS 7
-  yum:
-    name: python-s3transfer.0.1.13-1.el7.0.1
-    allow_downgrade: yes
-    state: present
-
 - name: certbot-renew service.d directory
   file:
     path: /etc/systemd/system/certbot-renew.service.d
