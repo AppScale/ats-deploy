@@ -1,5 +1,5 @@
 ---
-ceph_release: jewel
+ceph_release: nautilus
 
 ceph_public_network: 192.168.0.0/16
 

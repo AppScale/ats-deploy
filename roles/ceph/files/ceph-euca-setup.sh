@@ -14,8 +14,6 @@ if ! ceph osd pool ls | grep -q ${EUCA_CEPH_VOLUME_POOL_NAME} ; then
     echo "Generating volume pool ${EUCA_CEPH_VOLUME_POOL_NAME}"
     ceph osd pool create ${EUCA_CEPH_VOLUME_POOL_NAME} ${EUCA_POOL_PLACEMENT_GROUPS}
     ceph osd pool application enable ${EUCA_CEPH_VOLUME_POOL_NAME} rbd 2>/dev/null || true
-    ceph balancer mode upmap
-    ceph balancer on
 fi
 
 if [ "${EUCA_CEPH_VOLUME_POOL_NAME}" != "${EUCA_CEPH_SNAPSHOT_POOL_NAME}" ] ; then
@@ -28,6 +26,10 @@ fi
 
 if [ -n "${EUCA_CEPH_MIN_CLIENT}" ] ; then
     ceph osd set-require-min-compat-client "${EUCA_CEPH_MIN_CLIENT}"
+    if [[ "${EUCA_CEPH_MIN_CLIENT:0:1}" > "l" ]]; then
+        ceph balancer mode upmap
+        ceph balancer on
+    fi
 fi
 
 if [ ! -e "${EUCA_CEPH_ARTIFACTS_DIR}" ] ; then
