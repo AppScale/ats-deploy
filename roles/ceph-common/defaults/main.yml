@@ -12,7 +12,7 @@ ceph_osd_volume_pool: eucavolumes
 
 ceph_osd_snapshot_pool: eucasnapshots
 
-ceph_osd_pool_pgnum: 256
+ceph_osd_pool_pgnum: 16
 
 ceph_rgw_uid: eucas3
 
