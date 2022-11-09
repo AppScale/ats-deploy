@@ -11,7 +11,7 @@ eucaconsole_package_suffix: "{{ ( '-' + eucaconsole_package_version ) if eucacon
 eucalyptus_console_cname: "ec2.{{ cloud_system_dns_dnsdomain | default('localhost') }}"
 
 # Certbot
-eucaconsole_certbot_configure: no
+eucaconsole_certbot_configure: "{{ eucalyptus_services_certbot_enable }}"
 eucaconsole_certbot_domain: "console.{{ cloud_system_dns_dnsdomain | default('localhost') }}"
 eucaconsole_certbot_email: ""
 eucaconsole_certbot_certonly_opts: "--no-eff-email"

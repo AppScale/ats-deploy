@@ -24,8 +24,3 @@ enable_M5D_instances: False
 enable_T1_instances: False
 enable_T3_instances: False
 
-# Certbot for eucalyptus-cloud
-eucalyptus_services_certbot_enable: no
-eucalyptus_services_certbot_email: ""
-eucalyptus_services_certbot_certonly_opts: "--no-eff-email"
-eucalyptus_services_endpoints: ['*', '*.s3']
